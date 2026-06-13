@@ -1,0 +1,1353 @@
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+}
+
+.brand-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-logo {
+  width: 78px;
+  height: 78px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: white;
+  padding: 6px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.eyebrow {
+  color: #facc15;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0 0 8px;
+}
+
+h1 {
+  color: #ef4444;
+  font-size: 44px;
+  margin: 0;
+  line-height: 1;
+}
+
+.subtitle {
+  color: #cbd5e1;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.login-box {
+  display: grid;
+  grid-template-columns: 150px 130px auto;
+  gap: 8px;
+  align-items: center;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.login-box input {
+  padding: 9px 10px;
+  font-size: 13px;
+}
+
+.login-box button {
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.login-box small {
+  grid-column: 1 / -1;
+  color: #fca5a5;
+  font-weight: bold;
+}
+
+.admin-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: #facc15;
+  font-weight: bold;
+}
+
+.small-button {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+button {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #dc2626;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.tab {
+  background: #334155;
+}
+
+.active-tab {
+  background: #ef4444 !important;
+  border: 2px solid #facc15;
+}
+
+.form-section,
+.live-section {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 28px;
+}
+
+.game-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-row,
+.live-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #cbd5e1;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+input,
+select {
+  background: #0f172a;
+  color: white;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 15px;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #facc15;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+  gap: 12px;
+}
+
+.scoreboard {
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.baseball-scoreboard {
+  overflow-x: auto;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) repeat(9, 42px) 52px 52px 52px;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #334155;
+  align-items: center;
+  min-width: 720px;
+}
+
+.score-row:last-child {
+  border-bottom: none;
+}
+
+.score-row span:not(:first-child) {
+  text-align: center;
+  font-weight: bold;
+}
+
+.score-row span:nth-child(11) {
+  border-left: 2px solid #facc15;
+  padding-left: 12px;
+}
+
+.score-header {
+  color: #facc15;
+  background: #111827;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.game-title {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.game-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 13px 16px;
+  margin-bottom: 18px;
+  color: #facc15;
+}
+
+.lineup-builder {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.lineup-builder h3 {
+  margin: 0 0 8px;
+  color: #facc15;
+}
+
+.lineup-builder p {
+  color: #cbd5e1;
+  margin-top: 0;
+}
+
+.lineup-table {
+  display: grid;
+  gap: 10px;
+}
+
+.lineup-row {
+  display: grid;
+  grid-template-columns: 1.5fr 100px 130px;
+  gap: 10px;
+  align-items: center;
+}
+
+.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+}
+
+.checkbox-label input {
+  width: auto;
+}
+
+.batting-order {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.batting-order h3 {
+  margin: 0 0 12px;
+  color: #facc15;
+}
+
+.batting-order-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.batter-button {
+  background: #334155;
+  text-align: left;
+}
+
+.batter-button:hover {
+  background: #475569;
+}
+
+.active-batter {
+  background: #ef4444 !important;
+  border: 2px solid #facc15;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.25);
+}
+
+.play-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.play-buttons button {
+  background: #2563eb;
+}
+
+.play-buttons button:hover {
+  background: #1d4ed8;
+}
+
+.live-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.secondary-button {
+  background: #475569;
+  margin-top: 6px;
+}
+
+.secondary-button:hover {
+  background: #334155;
+}
+
+.undo-button {
+  background: #f97316;
+}
+
+.undo-button:hover {
+  background: #ea580c;
+}
+
+.opponent-panel {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.opponent-panel h3 {
+  margin: 0 0 8px;
+  color: #facc15;
+}
+
+.opponent-panel p {
+  margin-top: 0;
+  color: #cbd5e1;
+}
+
+.substitution-panel {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.substitution-panel h3 {
+  margin: 0 0 12px;
+  color: #facc15;
+}
+
+.substitution-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.field-card {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.field-card h3 {
+  margin: 0 0 12px;
+  color: #facc15;
+}
+
+.stadium-field {
+  position: relative;
+  height: 520px;
+  background:
+    radial-gradient(circle at 50% 82%, #a16207 0 10%, transparent 10.3%),
+    radial-gradient(circle at 50% 61%, #a16207 0 4.5%, transparent 4.8%),
+    linear-gradient(135deg, transparent 0 48.8%, rgba(255,255,255,0.95) 49%, rgba(255,255,255,0.95) 49.4%, transparent 49.7%),
+    linear-gradient(225deg, transparent 0 48.8%, rgba(255,255,255,0.95) 49%, rgba(255,255,255,0.95) 49.4%, transparent 49.7%),
+    radial-gradient(ellipse at 50% 100%, #166534 0 72%, #0f5132 73% 100%);
+  border-radius: 260px 260px 28px 28px;
+  overflow: hidden;
+  border: 3px solid #78350f;
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.35);
+}
+
+.outfield-arc {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  width: 82%;
+  height: 58%;
+  transform: translateX(-50%);
+  border-top: 5px solid #facc15;
+  border-left: 5px solid #facc15;
+  border-right: 5px solid #facc15;
+  border-radius: 420px 420px 0 0;
+  opacity: 0.9;
+}
+
+.left-foul-line,
+.right-foul-line {
+  position: absolute;
+  bottom: 84px;
+  width: 47%;
+  height: 3px;
+  background: rgba(255,255,255,0.95);
+  z-index: 1;
+}
+
+.left-foul-line {
+  left: 5%;
+  transform-origin: right center;
+  transform: rotate(-42deg);
+}
+
+.right-foul-line {
+  right: 5%;
+  transform-origin: left center;
+  transform: rotate(42deg);
+}
+
+.infield-diamond {
+  position: absolute;
+  left: 50%;
+  bottom: 80px;
+  width: 210px;
+  height: 210px;
+  background: #92400e;
+  border: 3px solid rgba(255,255,255,0.9);
+  transform: translateX(-50%) rotate(45deg);
+  z-index: 2;
+  box-shadow: 0 0 16px rgba(0,0,0,0.3);
+}
+
+.mound {
+  position: absolute;
+  left: 50%;
+  bottom: 198px;
+  width: 54px;
+  height: 36px;
+  background: #78350f;
+  border: 2px solid #fef3c7;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.base {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  background: #f8fafc;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  transform: rotate(45deg);
+  z-index: 5;
+  border: 1px solid #cbd5e1;
+}
+
+.home-base {
+  left: 50%;
+  bottom: 66px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.first-base {
+  left: calc(50% + 108px);
+  bottom: 172px;
+}
+
+.second-base {
+  left: 50%;
+  bottom: 278px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.third-base {
+  left: calc(50% - 142px);
+  bottom: 172px;
+}
+
+.field-player {
+  position: absolute;
+  background: #ef4444;
+  border: 2px solid #facc15;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: bold;
+  min-width: 78px;
+  text-align: center;
+  font-size: 13px;
+  z-index: 8;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+}
+
+.pos-c { left: 50%; bottom: 18px; transform: translateX(-50%); }
+.pos-p { left: 50%; bottom: 208px; transform: translateX(-50%); }
+.pos-1b { right: 22%; bottom: 185px; }
+.pos-2b { right: 35%; bottom: 292px; }
+.pos-ss { left: 35%; bottom: 292px; }
+.pos-3b { left: 22%; bottom: 185px; }
+.pos-lf { left: 12%; top: 125px; }
+.pos-cf { left: 50%; top: 70px; transform: translateX(-50%); }
+.pos-rf { right: 12%; top: 125px; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.card span {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.card strong {
+  display: block;
+  font-size: 22px;
+  margin-top: 10px;
+}
+
+.card p {
+  font-size: 30px;
+  color: #facc15;
+  margin: 8px 0 0;
+  font-weight: bold;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: #1e293b;
+  border-radius: 16px;
+  border: 1px solid #334155;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1050px;
+}
+
+th,
+td {
+  padding: 12px;
+  border-bottom: 1px solid #334155;
+  text-align: center;
+  white-space: nowrap;
+}
+
+th {
+  color: #facc15;
+  background: #111827;
+  font-size: 13px;
+}
+
+.player-name {
+  text-align: left;
+  font-weight: bold;
+  color: white;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-item {
+  background: #111827;
+  border: 1px solid #334155;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-item:hover {
+  background: #1e293b;
+}
+
+.history-item small {
+  color: #facc15;
+  font-weight: bold;
+}
+
+.history-detail {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+@media (max-width: 800px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .brand-left {
+    align-items: center;
+  }
+
+  .team-logo {
+    width: 64px;
+    height: 64px;
+  }
+
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .login-box {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-badge {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  h1 {
+    font-size: 34px;
+  }
+
+  .app {
+    padding: 18px;
+  }
+
+  .history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lineup-row {
+    grid-template-columns: 1fr;
+  }
+
+  .score-row {
+    grid-template-columns: minmax(120px, 1fr) repeat(9, 38px) 46px 46px 46px;
+  }
+
+  .stadium-field {
+    height: 390px;
+  }
+
+  .field-player {
+    min-width: 58px;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .infield-diamond {
+    width: 150px;
+    height: 150px;
+  }
+
+  .pos-p { bottom: 155px; }
+  .pos-2b { bottom: 225px; }
+  .pos-ss { bottom: 225px; }
+  .pos-lf { top: 100px; }
+  .pos-cf { top: 50px; }
+  .pos-rf { top: 100px; }
+}
+/* ============================================================
+   LIVE FIELD + VERTICAL LINEUP LAYOUT
+   ============================================================ */
+.app {
+  max-width: 1400px;
+}
+
+.field-lineup-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 18px;
+}
+
+/* ============================================================
+   VERTICAL BATTING ORDER
+   ============================================================ */
+.batting-order {
+  background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 0;
+  height: 100%;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+}
+
+.batting-order h3 {
+  margin: 0 0 14px;
+  color: #facc15;
+  letter-spacing: 0.3px;
+}
+
+.batting-order-buttons,
+.batting-order-buttons.vertical-order {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.batter-button {
+  background: #1e293b;
+  border: 1px solid #475569;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 44px 1fr 54px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.batter-button:hover {
+  background: #334155;
+  transform: translateY(-1px);
+}
+
+.order-number {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #0f172a;
+  border: 2px solid #facc15;
+  color: #facc15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.order-name {
+  font-weight: 800;
+  color: white;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-pos {
+  text-align: center;
+  font-weight: 800;
+  color: #cbd5e1;
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.active-batter {
+  background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 100%) !important;
+  border: 2px solid #facc15;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18), 0 10px 26px rgba(127, 29, 29, 0.35);
+}
+
+.active-batter .order-number {
+  background: #facc15;
+  color: #111827;
+  border-color: white;
+}
+
+.active-batter .order-pos {
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
+
+/* ============================================================
+   REALISTIC BASEBALL FIELD
+   ============================================================ */
+.field-card {
+  background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 0;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+}
+
+.field-card h3 {
+  margin: 0 0 12px;
+  color: #facc15;
+  letter-spacing: 0.3px;
+}
+
+.stadium-field {
+  position: relative;
+  height: 600px;
+  background: linear-gradient(180deg, #2f9e4d 0%, #1d743a 58%, #176132 100%);
+  border-radius: 300px 300px 28px 28px;
+  overflow: hidden;
+  border: 4px solid #78350f;
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.28), 0 16px 28px rgba(0, 0, 0, 0.22);
+}
+
+.warning-track {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  width: 90%;
+  height: 68%;
+  transform: translateX(-50%);
+  border-radius: 450px 450px 0 0;
+  background: #8b5a2b;
+  z-index: 0;
+}
+
+.outfield-fence {
+  position: absolute;
+  left: 50%;
+  top: 34px;
+  width: 84%;
+  height: 60%;
+  transform: translateX(-50%);
+  border-top: 5px solid #facc15;
+  border-left: 5px solid #facc15;
+  border-right: 5px solid #facc15;
+  border-radius: 450px 450px 0 0;
+  z-index: 3;
+  box-shadow: 0 -3px 0 rgba(255, 255, 255, 0.25) inset;
+}
+
+.grass-stripe {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 82%;
+  border-radius: 440px 440px 0 0;
+  opacity: 0.24;
+  z-index: 1;
+}
+
+.stripe-1 {
+  top: 64px;
+  height: 13%;
+  background: #b8f38a;
+}
+
+.stripe-2 {
+  top: 122px;
+  height: 13%;
+  background: #28783e;
+}
+
+.stripe-3 {
+  top: 182px;
+  height: 13%;
+  background: #b8f38a;
+}
+
+.stripe-4 {
+  top: 242px;
+  height: 13%;
+  background: #28783e;
+}
+
+.left-foul-line,
+.right-foul-line {
+  position: absolute;
+  bottom: 94px;
+  width: 48%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.98);
+  z-index: 8;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.45);
+}
+
+.left-foul-line {
+  left: 5.5%;
+  transform-origin: right center;
+  transform: rotate(-42deg);
+}
+
+.right-foul-line {
+  right: 5.5%;
+  transform-origin: left center;
+  transform: rotate(42deg);
+}
+
+.infield-dirt {
+  position: absolute;
+  left: 50%;
+  bottom: 48px;
+  width: 390px;
+  height: 390px;
+  background: radial-gradient(circle at 50% 50%, #c38349 0%, #ad6c37 74%, #8f552c 100%);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.18);
+}
+
+.infield-grass {
+  position: absolute;
+  left: 50%;
+  bottom: 104px;
+  width: 245px;
+  height: 245px;
+  background: linear-gradient(135deg, #2f9e4d 0%, #1e7b3a 100%);
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 18px;
+  z-index: 5;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.18);
+}
+
+.infield-diamond {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  width: 224px;
+  height: 224px;
+  background: transparent;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  transform: translateX(-50%) rotate(45deg);
+  z-index: 6;
+}
+
+.mound {
+  position: absolute;
+  left: 50%;
+  bottom: 238px;
+  width: 60px;
+  height: 40px;
+  background: #8d5c2f;
+  border: 2px solid #fef3c7;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.base {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background: #f8fafc;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  transform: rotate(45deg);
+  z-index: 10;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.28);
+}
+
+.home-base {
+  left: 50%;
+  bottom: 74px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.first-base {
+  left: calc(50% + 114px);
+  bottom: 188px;
+}
+
+.second-base {
+  left: 50%;
+  bottom: 304px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.third-base {
+  left: calc(50% - 146px);
+  bottom: 188px;
+}
+
+.field-player {
+  position: absolute;
+  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+  border: 2px solid #facc15;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 800;
+  min-width: 88px;
+  max-width: 135px;
+  text-align: center;
+  font-size: 13px;
+  z-index: 12;
+  color: white;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-c { left: 50%; bottom: 18px; transform: translateX(-50%); }
+.pos-p { left: 50%; bottom: 248px; transform: translateX(-50%); }
+.pos-1b { right: 20%; bottom: 205px; }
+.pos-2b { right: 33%; bottom: 322px; }
+.pos-ss { left: 33%; bottom: 322px; }
+.pos-3b { left: 20%; bottom: 205px; }
+.pos-lf { left: 10%; top: 132px; }
+.pos-cf { left: 50%; top: 82px; transform: translateX(-50%); }
+.pos-rf { right: 10%; top: 132px; }
+
+/* ============================================================
+   MOBILE ADJUSTMENTS
+   ============================================================ */
+@media (max-width: 950px) {
+  .field-lineup-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .field-lineup-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stadium-field {
+    height: 430px;
+  }
+
+  .warning-track {
+    top: 14px;
+    width: 92%;
+    height: 65%;
+  }
+
+  .outfield-fence {
+    top: 28px;
+    width: 84%;
+    height: 58%;
+  }
+
+  .infield-dirt {
+    width: 270px;
+    height: 270px;
+    bottom: 46px;
+  }
+
+  .infield-grass {
+    width: 170px;
+    height: 170px;
+    bottom: 90px;
+  }
+
+  .infield-diamond {
+    width: 150px;
+    height: 150px;
+    bottom: 86px;
+  }
+
+  .mound {
+    width: 48px;
+    height: 32px;
+    bottom: 170px;
+  }
+
+  .home-base {
+    bottom: 64px;
+  }
+
+  .first-base {
+    left: calc(50% + 78px);
+    bottom: 145px;
+  }
+
+  .second-base {
+    bottom: 226px;
+  }
+
+  .third-base {
+    left: calc(50% - 110px);
+    bottom: 145px;
+  }
+
+  .field-player {
+    min-width: 62px;
+    max-width: 95px;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .pos-c { bottom: 14px; }
+  .pos-p { bottom: 176px; }
+  .pos-1b { right: 16%; bottom: 150px; }
+  .pos-2b { right: 30%; bottom: 224px; }
+  .pos-ss { left: 30%; bottom: 224px; }
+  .pos-3b { left: 16%; bottom: 150px; }
+  .pos-lf { left: 8%; top: 98px; }
+  .pos-cf { top: 56px; }
+  .pos-rf { right: 8%; top: 98px; }
+
+  .batter-button {
+    grid-template-columns: 40px 1fr 48px;
+    padding: 10px 12px;
+  }
+}
+
+
+/* ============================================================
+   FINAL FIXES: SS / 2B spacing and compact layout
+   ============================================================ */
+.pos-2b {
+  right: 27% !important;
+  bottom: 330px !important;
+}
+
+.pos-ss {
+  left: 27% !important;
+  bottom: 330px !important;
+}
+
+.form-note {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: -6px 0 4px;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 800px) {
+  .pos-2b {
+    right: 22% !important;
+    bottom: 228px !important;
+  }
+
+  .pos-ss {
+    left: 22% !important;
+    bottom: 228px !important;
+  }
+}
+
+
+/* ============================================================
+   SEASON STATS GROUPS
+   ============================================================ */
+
+.season-category {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 28px;
+}
+
+.season-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.season-category-header h2 {
+  margin: 0;
+  color: #ef4444;
+  font-size: 30px;
+}
+
+.season-category-header span {
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: right;
+}
+
+.season-inner-card {
+  margin-bottom: 18px;
+}
+
+.team-total-section {
+  border: 2px solid rgba(250, 204, 21, 0.45);
+}
+
+.team-total-row td {
+  background: #111827;
+  color: #f8fafc;
+  font-weight: bold;
+}
+
+.team-total-row .player-name {
+  color: #facc15;
+}
+
+@media (max-width: 800px) {
+  .season-category {
+    padding: 12px;
+  }
+
+  .season-category-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .season-category-header span {
+    text-align: left;
+  }
+}
+
+
+/* ============================================================
+   COMPACT LIVE BATTING ORDER OVERRIDE
+   Keeps lineup beside the field and prevents huge full-width buttons
+   ============================================================ */
+
+.field-lineup-layout {
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: start;
+}
+
+.batting-order {
+  width: max-content;
+  min-width: 250px;
+  max-width: 320px;
+  height: auto;
+}
+
+.batting-order-buttons,
+.batting-order-buttons.vertical-order {
+  align-items: flex-start;
+}
+
+.batter-button {
+  width: fit-content;
+  min-width: 220px;
+  max-width: 300px;
+  grid-template-columns: 34px max-content 42px;
+  padding: 9px 11px;
+  gap: 9px;
+}
+
+.order-number {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+
+.order-name {
+  white-space: nowrap;
+}
+
+.order-pos {
+  padding: 5px 7px;
+  font-size: 12px;
+}
+
+@media (max-width: 950px) {
+  .field-lineup-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .batting-order {
+    width: 100%;
+    max-width: none;
+  }
+
+  .batter-button {
+    width: fit-content;
+    max-width: 100%;
+  }
+}

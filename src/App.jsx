@@ -855,29 +855,62 @@ function App() {
     alert('Batting line saved')
   }
 
-  async function deleteHistoryBattingLine(row) {
+  async function resetPlayerGameStats(row) {
     if (!requireAdmin()) return
+    if (!selectedHistoryGame) return
 
-    const confirmed = window.confirm(`Delete batting line for ${row.players?.name || 'this player'}?`)
+    const playerId = Number(row.player_id)
+    const playerName = row.players?.name || 'this player'
+    const opponentName = selectedHistoryGame.opponent || getOpponentName(selectedHistoryGame) || 'Opponent'
+    const gameLabel = selectedHistoryGame.game_label || 'Game'
+
+    const confirmed = window.confirm(
+      `Reset all official stats for ${playerName} in ${gameLabel} vs ${opponentName}? This will delete batting and pitching lines and allow the player to submit this game again.`
+    )
+
     if (!confirmed) return
 
-    const { error } = await supabase
-      .from('batting_lines')
-      .delete()
-      .eq('id', row.id)
+    const [battingDelete, pitchingDelete, reportUpdate] = await Promise.all([
+      supabase
+        .from('batting_lines')
+        .delete()
+        .eq('game_id', selectedHistoryGame.id)
+        .eq('player_id', playerId),
 
-    if (error) {
-      console.error('Error deleting batting line:', error)
-      alert('Error deleting batting line')
+      supabase
+        .from('pitching_lines')
+        .delete()
+        .eq('game_id', selectedHistoryGame.id)
+        .eq('player_id', playerId),
+
+      supabase
+        .from('player_stat_reports')
+        .update({
+          status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: ADMIN_EMAIL,
+        })
+        .eq('game_date', selectedHistoryGame.game_date)
+        .ilike('opponent', opponentName)
+        .eq('game_label', gameLabel)
+        .eq('player_id', playerId)
+        .in('status', ['pending', 'approved']),
+    ])
+
+    if (battingDelete.error || pitchingDelete.error || reportUpdate.error) {
+      console.error('Error resetting player game stats:', battingDelete.error || pitchingDelete.error || reportUpdate.error)
+      alert('Error resetting player game stats')
       return
     }
 
-    if (selectedHistoryGame) {
-      await loadHistoryOfficialLines(selectedHistoryGame.id)
-    }
-
+    await loadHistoryOfficialLines(selectedHistoryGame.id)
     await loadStats()
-    alert('Batting line deleted')
+    await loadGameHistory()
+    alert('Player game stats reset. The player can submit this game again.')
+  }
+
+  async function deleteHistoryBattingLine(row) {
+    await resetPlayerGameStats(row)
   }
 
   function updateHistoryPitchingLine(lineId, field, value) {
@@ -939,28 +972,7 @@ function App() {
   }
 
   async function deleteHistoryPitchingLine(row) {
-    if (!requireAdmin()) return
-
-    const confirmed = window.confirm(`Delete pitching line for ${row.players?.name || 'this player'}?`)
-    if (!confirmed) return
-
-    const { error } = await supabase
-      .from('pitching_lines')
-      .delete()
-      .eq('id', row.id)
-
-    if (error) {
-      console.error('Error deleting pitching line:', error)
-      alert('Error deleting pitching line')
-      return
-    }
-
-    if (selectedHistoryGame) {
-      await loadHistoryOfficialLines(selectedHistoryGame.id)
-    }
-
-    await loadStats()
-    alert('Pitching line deleted')
+    await resetPlayerGameStats(row)
   }
 
   function getCurrentBatter() {
@@ -3269,7 +3281,7 @@ function App() {
                                         <td>
                                           <div className="table-actions">
                                             <button type="button" onClick={() => saveHistoryBattingLine(row)}>Save</button>
-                                            <button type="button" className="undo-button" onClick={() => deleteHistoryBattingLine(row)}>Delete</button>
+                                            <button type="button" className="undo-button" onClick={() => deleteHistoryBattingLine(row)}>Reset</button>
                                           </div>
                                         </td>
                                       )}
@@ -3368,7 +3380,7 @@ function App() {
                                       <td>
                                         <div className="table-actions">
                                           <button type="button" onClick={() => saveHistoryPitchingLine(row)}>Save</button>
-                                          <button type="button" className="undo-button" onClick={() => deleteHistoryPitchingLine(row)}>Delete</button>
+                                          <button type="button" className="undo-button" onClick={() => deleteHistoryPitchingLine(row)}>Reset</button>
                                         </div>
                                       </td>
                                     )}

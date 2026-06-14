@@ -157,6 +157,12 @@ function formatPercent(value) {
   return `${num.toFixed(1)}%`
 }
 
+function parseNumberInput(value) {
+  if (value === '') return ''
+  const num = Number(value)
+  return Number.isNaN(num) ? 0 : num
+}
+
 function parseIpToOuts(value) {
   if (value === null || value === undefined || value === '') return 0
 
@@ -428,11 +434,20 @@ function App() {
     loadAll()
     initAuth()
 
+    const handleNumberFocus = event => {
+      if (event.target?.matches?.('input[type="number"]')) {
+        event.target.select()
+      }
+    }
+
+    document.addEventListener('focusin', handleNumberFocus)
+
     const { data } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession)
     })
 
     return () => {
+      document.removeEventListener('focusin', handleNumberFocus)
       data?.subscription?.unsubscribe()
     }
   }, [])
@@ -807,7 +822,7 @@ function App() {
   function updateLine(field, value) {
     setLine(prev => ({
       ...prev,
-      [field]: field === 'player_id' ? value : Number(value),
+      [field]: field === 'player_id' ? value : parseNumberInput(value),
     }))
   }
 
@@ -1418,7 +1433,7 @@ function App() {
         ...(prev[reportId] || {}),
         [field]: field === 'game_date' || field === 'opponent' || field === 'game_label' || field === 'player_id' || field === 'pit_ip' || field === 'notes'
           ? value
-          : Number(value),
+          : parseNumberInput(value),
       },
     }))
   }
@@ -1455,7 +1470,7 @@ function App() {
       ...prev,
       [field]: field === 'game_date' || field === 'opponent' || field === 'game_label' || field === 'player_id' || field === 'pit_ip' || field === 'notes'
         ? value
-        : Number(value),
+        : parseNumberInput(value),
     }))
   }
 
@@ -1954,7 +1969,7 @@ function App() {
   function updatePitchLine(field, value) {
     setPitchLine(prev => ({
       ...prev,
-      [field]: field === 'player_id' || field === 'ip' ? value : Number(value),
+      [field]: field === 'player_id' || field === 'ip' ? value : parseNumberInput(value),
     }))
   }
 
@@ -2528,17 +2543,17 @@ function App() {
                       <div className="live-controls">
                         <label>
                           Opponent Runs
-                          <input type="number" min="0" value={opponentRunsInput} onChange={e => setOpponentRunsInput(Number(e.target.value))} />
+                          <input type="number" min="0" value={opponentRunsInput} onChange={e => setOpponentRunsInput(parseNumberInput(e.target.value))} />
                         </label>
 
                         <label>
                           Opponent Hits
-                          <input type="number" min="0" value={opponentHitsInput} onChange={e => setOpponentHitsInput(Number(e.target.value))} />
+                          <input type="number" min="0" value={opponentHitsInput} onChange={e => setOpponentHitsInput(parseNumberInput(e.target.value))} />
                         </label>
 
                         <label>
                           Cardenales Errors
-                          <input type="number" min="0" value={opponentErrorsInput} onChange={e => setOpponentErrorsInput(Number(e.target.value))} />
+                          <input type="number" min="0" value={opponentErrorsInput} onChange={e => setOpponentErrorsInput(parseNumberInput(e.target.value))} />
                         </label>
                       </div>
 
@@ -2553,12 +2568,12 @@ function App() {
                       <div className="live-controls">
                         <label>
                           Runs Scored
-                          <input type="number" min="0" value={runsScored} onChange={e => setRunsScored(Number(e.target.value))} />
+                          <input type="number" min="0" value={runsScored} onChange={e => setRunsScored(parseNumberInput(e.target.value))} />
                         </label>
 
                         <label>
                           RBI
-                          <input type="number" min="0" value={rbi} onChange={e => setRbi(Number(e.target.value))} />
+                          <input type="number" min="0" value={rbi} onChange={e => setRbi(parseNumberInput(e.target.value))} />
                         </label>
                       </div>
 
@@ -2969,7 +2984,7 @@ function App() {
                           type="number"
                           min="0"
                           value={historyScoreCardenales}
-                          onChange={e => setHistoryScoreCardenales(Number(e.target.value))}
+                          onChange={e => setHistoryScoreCardenales(parseNumberInput(e.target.value))}
                         />
                       </label>
 
@@ -2979,7 +2994,7 @@ function App() {
                           type="number"
                           min="0"
                           value={historyScoreOpponent}
-                          onChange={e => setHistoryScoreOpponent(Number(e.target.value))}
+                          onChange={e => setHistoryScoreOpponent(parseNumberInput(e.target.value))}
                         />
                       </label>
 

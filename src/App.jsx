@@ -33,6 +33,18 @@ function formatTime(value) {
 
 const positions = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'EH']
 
+const opponentTeams = [
+  'Yard Goats',
+  'Vipers',
+  'Wolves',
+  'Sky Sox',
+  'Space Donkeys',
+  'Performance',
+  'Twins',
+  'Outlaws',
+  'Padres',
+]
+
 const ADMIN_EMAIL = 'osmanyloa@gmail.com'
 
 const emptyLine = {
@@ -2533,7 +2545,12 @@ function App() {
 
                 <label>
                   Opponent Name
-                  <input type="text" placeholder="Ex: Dodgers" value={liveOpponent} onChange={e => setLiveOpponent(e.target.value)} />
+                  <select value={liveOpponent} onChange={e => setLiveOpponent(e.target.value)}>
+                    <option value="">Select opponent</option>
+                    {opponentTeams.map(team => (
+                      <option key={team} value={team}>{team}</option>
+                    ))}
+                  </select>
                 </label>
 
                 <label>
@@ -2817,7 +2834,12 @@ function App() {
 
               <label>
                 Opponent
-                <input type="text" placeholder="Ex: Dodgers" value={playerReport.opponent} onChange={e => updatePlayerReport('opponent', e.target.value)} />
+                <select value={playerReport.opponent} onChange={e => updatePlayerReport('opponent', e.target.value)}>
+                  <option value="">Select opponent</option>
+                  {opponentTeams.map(team => (
+                    <option key={team} value={team}>{team}</option>
+                  ))}
+                </select>
               </label>
 
               <label>
@@ -2975,7 +2997,12 @@ function App() {
 
                       <label>
                         Opponent
-                        <input type="text" value={draft.opponent} onChange={e => updateReviewDraft(report.id, 'opponent', e.target.value)} />
+                        <select value={draft.opponent} onChange={e => updateReviewDraft(report.id, 'opponent', e.target.value)}>
+                          <option value="">Select opponent</option>
+                          {opponentTeams.map(team => (
+                            <option key={team} value={team}>{team}</option>
+                          ))}
+                        </select>
                       </label>
 
                       <label>
@@ -3437,7 +3464,12 @@ function App() {
 
                   <label>
                     Opponent
-                    <input type="text" placeholder="Ex: Dodgers" value={opponent} onChange={e => setOpponent(e.target.value)} />
+                    <select value={opponent} onChange={e => setOpponent(e.target.value)}>
+                      <option value="">Select opponent</option>
+                      {opponentTeams.map(team => (
+                        <option key={team} value={team}>{team}</option>
+                      ))}
+                    </select>
                   </label>
 
                   <label>
@@ -3629,7 +3661,12 @@ function App() {
 
                   <label>
                     Opponent
-                    <input type="text" placeholder="Ex: Dodgers" value={pitchOpponent} onChange={e => setPitchOpponent(e.target.value)} />
+                    <select value={pitchOpponent} onChange={e => setPitchOpponent(e.target.value)}>
+                      <option value="">Select opponent</option>
+                      {opponentTeams.map(team => (
+                        <option key={team} value={team}>{team}</option>
+                      ))}
+                    </select>
                   </label>
 
                   <label>

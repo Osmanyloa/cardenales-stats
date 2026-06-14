@@ -173,6 +173,13 @@ function parseIpToOuts(value) {
   return innings * 3 + extraOuts
 }
 
+function formatIpFromOuts(outs) {
+  const totalOuts = Number(outs || 0)
+  const innings = Math.floor(totalOuts / 3)
+  const extraOuts = totalOuts % 3
+  return `${innings}.${extraOuts}`
+}
+
 const playMap = {
   single: {
     label: 'Single',
@@ -369,6 +376,8 @@ function App() {
   const [selectedHistoryLineup, setSelectedHistoryLineup] = useState([])
   const [selectedHistoryStatsLineup, setSelectedHistoryStatsLineup] = useState([])
   const [selectedHistoryEvents, setSelectedHistoryEvents] = useState([])
+  const [selectedHistoryBattingLines, setSelectedHistoryBattingLines] = useState([])
+  const [selectedHistoryPitchingLines, setSelectedHistoryPitchingLines] = useState([])
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -664,6 +673,36 @@ function App() {
     return data || []
   }
 
+  async function loadHistoryOfficialLines(gameId) {
+    const [battingResponse, pitchingResponse] = await Promise.all([
+      supabase
+        .from('batting_lines')
+        .select('*, players(name, number)')
+        .eq('game_id', gameId)
+        .order('id', { ascending: true }),
+
+      supabase
+        .from('pitching_lines')
+        .select('*, players(name, number)')
+        .eq('game_id', gameId)
+        .order('id', { ascending: true }),
+    ])
+
+    if (battingResponse.error) {
+      console.error('Error loading official batting lines:', battingResponse.error)
+      setSelectedHistoryBattingLines([])
+    } else {
+      setSelectedHistoryBattingLines(battingResponse.data || [])
+    }
+
+    if (pitchingResponse.error) {
+      console.error('Error loading official pitching lines:', pitchingResponse.error)
+      setSelectedHistoryPitchingLines([])
+    } else {
+      setSelectedHistoryPitchingLines(pitchingResponse.data || [])
+    }
+  }
+
   async function loadGameHistory() {
     const { data, error } = await supabase
       .from('games')
@@ -685,6 +724,7 @@ function App() {
     await loadGameLineup(game.id, setSelectedHistoryLineup, true, playersList)
     await loadGameLineup(game.id, setSelectedHistoryStatsLineup, false, playersList)
     await loadGameEvents(game.id, setSelectedHistoryEvents)
+    await loadHistoryOfficialLines(game.id)
   }
 
   function getCurrentBatter() {
@@ -1321,7 +1361,7 @@ function App() {
     })
 
     setReportSaving(false)
-    alert('Report submitted. Osmany will review it before it becomes official.')
+    alert('Report submitted successfully.')
   }
 
   async function loadPendingReports() {
@@ -1396,6 +1436,24 @@ function App() {
     }
 
     if (existingGame) {
+      if (!existingGame.completed_at) {
+        const { data: updatedGame, error: updateExistingError } = await supabase
+          .from('games')
+          .update({
+            completed_at: new Date().toISOString(),
+            is_active: false,
+          })
+          .eq('id', existingGame.id)
+          .select()
+          .single()
+
+        if (updateExistingError) {
+          throw updateExistingError
+        }
+
+        return updatedGame
+      }
+
       return existingGame
     }
 
@@ -1408,6 +1466,7 @@ function App() {
         away_team: report.opponent,
         home_team: 'Cardenales',
         is_active: false,
+        completed_at: new Date().toISOString(),
         opponent_i1: 0,
         opponent_i2: 0,
         opponent_i3: 0,
@@ -2292,10 +2351,6 @@ function App() {
       {activeTab === 'report' && (
         <section className="live-section">
           <h2>Player Game Report</h2>
-          <p className="public-note">
-            Fill your own stats after the game. Osmany will review the report before it becomes official.
-          </p>
-
           <form onSubmit={submitPlayerReport} className="game-form report-form">
             <div className="form-row">
               <label>
@@ -2392,7 +2447,7 @@ function App() {
               <textarea
                 value={playerReport.notes}
                 onChange={e => updatePlayerReport('notes', e.target.value)}
-                placeholder="Optional: write anything Osmany should review"
+                placeholder="Optional: notes or correction"
               />
             </label>
 
@@ -2474,7 +2529,7 @@ function App() {
                 >
                   <strong>{formatDate(game.game_date)} {formatTime(game.game_time)}</strong>
                   <span>vs {game.away_team === 'Cardenales' ? game.home_team : game.away_team}</span>
-                  <small>Cardenales {game.cardenales_runs || 0} - {game.opponent_runs || 0}</small>
+                  <small>{game.game_label || 'Game'} - Cardenales {game.cardenales_runs || 0} - {game.opponent_runs || 0}</small>
                 </button>
               ))}
             </div>
@@ -2484,55 +2539,174 @@ function App() {
                 <p>Select a game to view details.</p>
               ) : (
                 <>
-                  <h3>{formatDate(selectedHistoryGame.game_date)} {formatTime(selectedHistoryGame.game_time)} - {selectedHistoryGame.away_team} at {selectedHistoryGame.home_team}</h3>
+                  <h3>
+                    {formatDate(selectedHistoryGame.game_date)} {formatTime(selectedHistoryGame.game_time)} - {selectedHistoryGame.game_label || 'Game'} - {selectedHistoryGame.away_team} at {selectedHistoryGame.home_team}
+                  </h3>
                   {renderScoreboard(selectedHistoryGame)}
-                  {renderField(selectedHistoryLineup)}
 
-                  <h3>Player Stats</h3>
+                  {selectedHistoryLineup.length > 0 && renderField(selectedHistoryLineup)}
 
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>PLAYER</th>
-                          <th>POS</th>
-                          <th>AB</th>
-                          <th>R</th>
-                          <th>H</th>
-                          <th>2B</th>
-                          <th>3B</th>
-                          <th>HR</th>
-                          <th>RBI</th>
-                          <th>BB</th>
-                          <th>HBP</th>
-                          <th>SO</th>
-                          <th>SB</th>
-                          <th>AVG</th>
-                        </tr>
-                      </thead>
+                  {(selectedHistoryBattingLines.length > 0 || selectedHistoryPitchingLines.length > 0) ? (
+                    <>
+                      {selectedHistoryBattingLines.length > 0 && (
+                        <>
+                          <h3>Official Batting Lines</h3>
 
-                      <tbody>
-                        {historyPlayerStats.map(player => (
-                          <tr key={`${player.player_id}-${player.batting_order}`}>
-                            <td className="player-name">{player.name}</td>
-                            <td>{player.field_position}</td>
-                            <td>{player.ab}</td>
-                            <td>{player.r}</td>
-                            <td>{player.h}</td>
-                            <td>{player.doubles}</td>
-                            <td>{player.triples}</td>
-                            <td>{player.hr}</td>
-                            <td>{player.rbi}</td>
-                            <td>{player.bb}</td>
-                            <td>{player.hbp}</td>
-                            <td>{player.so}</td>
-                            <td>{player.sb}</td>
-                            <td>{formatStat(player.avg)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                          <div className="table-wrap">
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>PLAYER</th>
+                                  <th>#</th>
+                                  <th>AB</th>
+                                  <th>R</th>
+                                  <th>H</th>
+                                  <th>2B</th>
+                                  <th>3B</th>
+                                  <th>HR</th>
+                                  <th>RBI</th>
+                                  <th>BB</th>
+                                  <th>HBP</th>
+                                  <th>SF</th>
+                                  <th>SO</th>
+                                  <th>SB</th>
+                                  <th>AVG</th>
+                                </tr>
+                              </thead>
+
+                              <tbody>
+                                {selectedHistoryBattingLines.map(row => {
+                                  const avg = Number(row.ab || 0) > 0 ? Number(row.h || 0) / Number(row.ab || 0) : 0
+
+                                  return (
+                                    <tr key={`bat-${row.id}`}>
+                                      <td className="player-name">{row.players?.name || '-'}</td>
+                                      <td>{row.players?.number || ''}</td>
+                                      <td>{row.ab || 0}</td>
+                                      <td>{row.r || 0}</td>
+                                      <td>{row.h || 0}</td>
+                                      <td>{row.doubles || 0}</td>
+                                      <td>{row.triples || 0}</td>
+                                      <td>{row.hr || 0}</td>
+                                      <td>{row.rbi || 0}</td>
+                                      <td>{row.bb || 0}</td>
+                                      <td>{row.hbp || 0}</td>
+                                      <td>{row.sf || 0}</td>
+                                      <td>{row.so || 0}</td>
+                                      <td>{row.sb || 0}</td>
+                                      <td>{formatStat(avg)}</td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </>
+                      )}
+
+                      {selectedHistoryPitchingLines.length > 0 && (
+                        <>
+                          <h3>Official Pitching Lines</h3>
+
+                          <div className="table-wrap">
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>PLAYER</th>
+                                  <th>#</th>
+                                  <th>IP</th>
+                                  <th>H</th>
+                                  <th>ER</th>
+                                  <th>UER</th>
+                                  <th>BB</th>
+                                  <th>SO</th>
+                                  <th>HR</th>
+                                  <th>HBP</th>
+                                  <th>PITCHES</th>
+                                  <th>W</th>
+                                  <th>L</th>
+                                  <th>SV</th>
+                                </tr>
+                              </thead>
+
+                              <tbody>
+                                {selectedHistoryPitchingLines.map(row => (
+                                  <tr key={`pit-${row.id}`}>
+                                    <td className="player-name">{row.players?.name || '-'}</td>
+                                    <td>{row.players?.number || ''}</td>
+                                    <td>{formatIpFromOuts(row.ip_outs)}</td>
+                                    <td>{row.h || 0}</td>
+                                    <td>{row.er || 0}</td>
+                                    <td>{row.uer || 0}</td>
+                                    <td>{row.bb || 0}</td>
+                                    <td>{row.so || 0}</td>
+                                    <td>{row.hr || 0}</td>
+                                    <td>{row.hbp || 0}</td>
+                                    <td>{row.pitches || 0}</td>
+                                    <td>{row.w || 0}</td>
+                                    <td>{row.l || 0}</td>
+                                    <td>{row.sv || 0}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <h3>Live Game Player Stats</h3>
+
+                      {historyPlayerStats.length === 0 ? (
+                        <p>No player stats saved for this game yet.</p>
+                      ) : (
+                        <div className="table-wrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>PLAYER</th>
+                                <th>POS</th>
+                                <th>AB</th>
+                                <th>R</th>
+                                <th>H</th>
+                                <th>2B</th>
+                                <th>3B</th>
+                                <th>HR</th>
+                                <th>RBI</th>
+                                <th>BB</th>
+                                <th>HBP</th>
+                                <th>SO</th>
+                                <th>SB</th>
+                                <th>AVG</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              {historyPlayerStats.map(player => (
+                                <tr key={`${player.player_id}-${player.batting_order}`}>
+                                  <td className="player-name">{player.name}</td>
+                                  <td>{player.field_position}</td>
+                                  <td>{player.ab}</td>
+                                  <td>{player.r}</td>
+                                  <td>{player.h}</td>
+                                  <td>{player.doubles}</td>
+                                  <td>{player.triples}</td>
+                                  <td>{player.hr}</td>
+                                  <td>{player.rbi}</td>
+                                  <td>{player.bb}</td>
+                                  <td>{player.hbp}</td>
+                                  <td>{player.so}</td>
+                                  <td>{player.sb}</td>
+                                  <td>{formatStat(player.avg)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </>
               )}
             </div>

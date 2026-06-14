@@ -71,6 +71,40 @@ const emptyPitchLine = {
   sv: 0,
 }
 
+const emptyPlayerReport = {
+  game_date: '',
+  opponent: '',
+  game_label: 'Game 1',
+  player_id: '',
+  notes: '',
+
+  bat_ab: 0,
+  bat_r: 0,
+  bat_h: 0,
+  bat_doubles: 0,
+  bat_triples: 0,
+  bat_hr: 0,
+  bat_rbi: 0,
+  bat_bb: 0,
+  bat_hbp: 0,
+  bat_sf: 0,
+  bat_so: 0,
+  bat_sb: 0,
+
+  pit_ip: '',
+  pit_h: 0,
+  pit_er: 0,
+  pit_uer: 0,
+  pit_bb: 0,
+  pit_so: 0,
+  pit_hr: 0,
+  pit_hbp: 0,
+  pit_pitches: 0,
+  pit_w: 0,
+  pit_l: 0,
+  pit_sv: 0,
+}
+
 const emptyTeamBattingTotals = {
   ab: 0,
   r: 0,
@@ -368,6 +402,11 @@ function App() {
   const [subPlayerIn, setSubPlayerIn] = useState('')
   const [subPosition, setSubPosition] = useState('')
 
+  const [playerReport, setPlayerReport] = useState(emptyPlayerReport)
+  const [reportSaving, setReportSaving] = useState(false)
+  const [pendingReports, setPendingReports] = useState([])
+  const [reviewLoading, setReviewLoading] = useState(false)
+
   const isAdmin = session?.user?.email === ADMIN_EMAIL
 
   useEffect(() => {
@@ -382,6 +421,14 @@ function App() {
       data?.subscription?.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadPendingReports()
+    } else {
+      setPendingReports([])
+    }
+  }, [isAdmin])
 
   async function initAuth() {
     const { data, error } = await supabase.auth.getSession()
@@ -1181,6 +1228,332 @@ function App() {
     alert('Substitution saved')
   }
 
+  function updatePlayerReport(field, value) {
+    setPlayerReport(prev => ({
+      ...prev,
+      [field]: field === 'game_date' || field === 'opponent' || field === 'game_label' || field === 'player_id' || field === 'pit_ip' || field === 'notes'
+        ? value
+        : Number(value),
+    }))
+  }
+
+  async function submitPlayerReport(event) {
+    event.preventDefault()
+
+    if (!playerReport.game_date) {
+      alert('Enter the game date')
+      return
+    }
+
+    if (!playerReport.opponent.trim()) {
+      alert('Enter the opponent')
+      return
+    }
+
+    if (!playerReport.player_id) {
+      alert('Select your name')
+      return
+    }
+
+    const ipOuts = parseIpToOuts(playerReport.pit_ip)
+
+    if (ipOuts === null) {
+      alert('Pitching IP can only end in .0, .1 or .2. Example: 5.2')
+      return
+    }
+
+    setReportSaving(true)
+
+    const { error } = await supabase
+      .from('player_stat_reports')
+      .insert({
+        game_date: playerReport.game_date,
+        opponent: playerReport.opponent.trim(),
+        game_label: playerReport.game_label || 'Game 1',
+        player_id: Number(playerReport.player_id),
+        notes: playerReport.notes || null,
+
+        bat_ab: Number(playerReport.bat_ab || 0),
+        bat_r: Number(playerReport.bat_r || 0),
+        bat_h: Number(playerReport.bat_h || 0),
+        bat_doubles: Number(playerReport.bat_doubles || 0),
+        bat_triples: Number(playerReport.bat_triples || 0),
+        bat_hr: Number(playerReport.bat_hr || 0),
+        bat_rbi: Number(playerReport.bat_rbi || 0),
+        bat_bb: Number(playerReport.bat_bb || 0),
+        bat_hbp: Number(playerReport.bat_hbp || 0),
+        bat_sf: Number(playerReport.bat_sf || 0),
+        bat_so: Number(playerReport.bat_so || 0),
+        bat_sb: Number(playerReport.bat_sb || 0),
+
+        pit_ip: playerReport.pit_ip || null,
+        pit_ip_outs: ipOuts || 0,
+        pit_h: Number(playerReport.pit_h || 0),
+        pit_er: Number(playerReport.pit_er || 0),
+        pit_uer: Number(playerReport.pit_uer || 0),
+        pit_bb: Number(playerReport.pit_bb || 0),
+        pit_so: Number(playerReport.pit_so || 0),
+        pit_hr: Number(playerReport.pit_hr || 0),
+        pit_hbp: Number(playerReport.pit_hbp || 0),
+        pit_pitches: Number(playerReport.pit_pitches || 0),
+        pit_w: Number(playerReport.pit_w || 0),
+        pit_l: Number(playerReport.pit_l || 0),
+        pit_sv: Number(playerReport.pit_sv || 0),
+        status: 'pending',
+      })
+
+    if (error) {
+      console.error('Error submitting report:', error)
+      alert('Error submitting report. Try again.')
+      setReportSaving(false)
+      return
+    }
+
+    const keepGameInfo = {
+      game_date: playerReport.game_date,
+      opponent: playerReport.opponent,
+      game_label: playerReport.game_label,
+    }
+
+    setPlayerReport({
+      ...emptyPlayerReport,
+      ...keepGameInfo,
+    })
+
+    setReportSaving(false)
+    alert('Report submitted. Osmany will review it before it becomes official.')
+  }
+
+  async function loadPendingReports() {
+    if (!isAdmin) return
+
+    setReviewLoading(true)
+
+    const { data, error } = await supabase
+      .from('player_stat_reports')
+      .select('*, players(name, number)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      console.error('Error loading pending reports:', error)
+      setReviewLoading(false)
+      return
+    }
+
+    setPendingReports(data || [])
+    setReviewLoading(false)
+  }
+
+  function reportHasBatting(report) {
+    return [
+      'bat_ab',
+      'bat_r',
+      'bat_h',
+      'bat_doubles',
+      'bat_triples',
+      'bat_hr',
+      'bat_rbi',
+      'bat_bb',
+      'bat_hbp',
+      'bat_sf',
+      'bat_so',
+      'bat_sb',
+    ].some(field => Number(report[field] || 0) > 0)
+  }
+
+  function reportHasPitching(report) {
+    return [
+      'pit_ip_outs',
+      'pit_h',
+      'pit_er',
+      'pit_uer',
+      'pit_bb',
+      'pit_so',
+      'pit_hr',
+      'pit_hbp',
+      'pit_pitches',
+      'pit_w',
+      'pit_l',
+      'pit_sv',
+    ].some(field => Number(report[field] || 0) > 0)
+  }
+
+  async function getOrCreateReportGame(report) {
+    const gameLabel = report.game_label || 'Game 1'
+
+    const { data: existingGame, error: findError } = await supabase
+      .from('games')
+      .select('*')
+      .eq('game_date', report.game_date)
+      .eq('opponent', report.opponent)
+      .eq('game_label', gameLabel)
+      .limit(1)
+      .maybeSingle()
+
+    if (findError) {
+      throw findError
+    }
+
+    if (existingGame) {
+      return existingGame
+    }
+
+    const { data: newGame, error: gameError } = await supabase
+      .from('games')
+      .insert({
+        game_date: report.game_date,
+        opponent: report.opponent,
+        game_label: gameLabel,
+        away_team: report.opponent,
+        home_team: 'Cardenales',
+        is_active: false,
+        opponent_i1: 0,
+        opponent_i2: 0,
+        opponent_i3: 0,
+        opponent_i4: 0,
+        opponent_i5: 0,
+        opponent_i6: 0,
+        opponent_i7: 0,
+        opponent_i8: 0,
+        opponent_i9: 0,
+        cardenales_i1: 0,
+        cardenales_i2: 0,
+        cardenales_i3: 0,
+        cardenales_i4: 0,
+        cardenales_i5: 0,
+        cardenales_i6: 0,
+        cardenales_i7: 0,
+        cardenales_i8: 0,
+        cardenales_i9: 0,
+        cardenales_runs: 0,
+        opponent_runs: 0,
+        cardenales_hits: 0,
+        opponent_hits: 0,
+        cardenales_errors: 0,
+        opponent_errors: 0,
+      })
+      .select()
+      .single()
+
+    if (gameError) {
+      throw gameError
+    }
+
+    return newGame
+  }
+
+  async function approveReport(report) {
+    if (!requireAdmin()) return
+
+    try {
+      const game = await getOrCreateReportGame(report)
+
+      if (reportHasBatting(report)) {
+        const { error: battingError } = await supabase
+          .from('batting_lines')
+          .insert({
+            game_id: game.id,
+            player_id: Number(report.player_id),
+            ab: Number(report.bat_ab || 0),
+            r: Number(report.bat_r || 0),
+            h: Number(report.bat_h || 0),
+            doubles: Number(report.bat_doubles || 0),
+            triples: Number(report.bat_triples || 0),
+            hr: Number(report.bat_hr || 0),
+            rbi: Number(report.bat_rbi || 0),
+            bb: Number(report.bat_bb || 0),
+            hbp: Number(report.bat_hbp || 0),
+            sf: Number(report.bat_sf || 0),
+            so: Number(report.bat_so || 0),
+            sb: Number(report.bat_sb || 0),
+          })
+
+        if (battingError) {
+          throw battingError
+        }
+      }
+
+      if (reportHasPitching(report)) {
+        const ipOuts = Number(report.pit_ip_outs || 0)
+        const opponentAb = ipOuts + Number(report.pit_h || 0)
+
+        const { error: pitchingError } = await supabase
+          .from('pitching_lines')
+          .insert({
+            game_id: game.id,
+            player_id: Number(report.player_id),
+            ip_outs: ipOuts,
+            h: Number(report.pit_h || 0),
+            ab_against: opponentAb,
+            er: Number(report.pit_er || 0),
+            uer: Number(report.pit_uer || 0),
+            bb: Number(report.pit_bb || 0),
+            so: Number(report.pit_so || 0),
+            hr: Number(report.pit_hr || 0),
+            hbp: Number(report.pit_hbp || 0),
+            pitches: Number(report.pit_pitches || 0),
+            balls: 0,
+            strikes: 0,
+            w: Number(report.pit_w || 0),
+            l: Number(report.pit_l || 0),
+            sv: Number(report.pit_sv || 0),
+          })
+
+        if (pitchingError) {
+          throw pitchingError
+        }
+      }
+
+      const { error: updateError } = await supabase
+        .from('player_stat_reports')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: ADMIN_EMAIL,
+        })
+        .eq('id', report.id)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      await loadPendingReports()
+      await loadStats()
+      await loadGameHistory()
+
+      alert('Report approved and added to season stats.')
+    } catch (error) {
+      console.error('Error approving report:', error)
+      alert('Error approving report. Check console.')
+    }
+  }
+
+  async function rejectReport(report) {
+    if (!requireAdmin()) return
+
+    const confirmed = window.confirm('Reject this player report?')
+
+    if (!confirmed) return
+
+    const { error } = await supabase
+      .from('player_stat_reports')
+      .update({
+        status: 'rejected',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: ADMIN_EMAIL,
+      })
+      .eq('id', report.id)
+
+    if (error) {
+      console.error('Error rejecting report:', error)
+      alert('Error rejecting report')
+      return
+    }
+
+    await loadPendingReports()
+  }
+
   function saveGameLine(event) {
     event.preventDefault()
     saveManualLine()
@@ -1904,6 +2277,178 @@ function App() {
                 </>
               )}
             </>
+          )}
+        </section>
+      )}
+
+
+      {activeTab === 'report' && (
+        <section className="live-section">
+          <h2>Player Game Report</h2>
+          <p className="public-note">
+            Fill your own stats after the game. Osmany will review the report before it becomes official.
+          </p>
+
+          <form onSubmit={submitPlayerReport} className="game-form report-form">
+            <div className="form-row">
+              <label>
+                Date
+                <input type="date" value={playerReport.game_date} onChange={e => updatePlayerReport('game_date', e.target.value)} />
+              </label>
+
+              <label>
+                Opponent
+                <input type="text" placeholder="Ex: Dodgers" value={playerReport.opponent} onChange={e => updatePlayerReport('opponent', e.target.value)} />
+              </label>
+
+              <label>
+                Game
+                <select value={playerReport.game_label} onChange={e => updatePlayerReport('game_label', e.target.value)}>
+                  <option value="Game 1">Game 1</option>
+                  <option value="Game 2">Game 2</option>
+                </select>
+              </label>
+
+              <label>
+                Player
+                <select value={playerReport.player_id} onChange={e => updatePlayerReport('player_id', e.target.value)}>
+                  <option value="">Select your name</option>
+                  {playersList.map(player => (
+                    <option key={player.id} value={player.id}>
+                      {player.name}{player.number ? ` #${player.number}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="report-grid">
+              <div className="report-card">
+                <h3>Batting</h3>
+
+                <div className="stats-grid">
+                  {[
+                    ['bat_ab', 'AB'],
+                    ['bat_r', 'R'],
+                    ['bat_h', 'H'],
+                    ['bat_doubles', '2B'],
+                    ['bat_triples', '3B'],
+                    ['bat_hr', 'HR'],
+                    ['bat_rbi', 'RBI'],
+                    ['bat_bb', 'BB'],
+                    ['bat_hbp', 'HBP'],
+                    ['bat_sf', 'SF'],
+                    ['bat_so', 'SO'],
+                    ['bat_sb', 'SB'],
+                  ].map(([field, label]) => (
+                    <label key={field}>
+                      {label}
+                      <input type="number" min="0" value={playerReport[field]} onChange={e => updatePlayerReport(field, e.target.value)} />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="report-card">
+                <h3>Pitching</h3>
+
+                <div className="stats-grid">
+                  <label>
+                    IP
+                    <input type="text" placeholder="Ex: 5.2" value={playerReport.pit_ip} onChange={e => updatePlayerReport('pit_ip', e.target.value)} />
+                  </label>
+
+                  {[
+                    ['pit_h', 'H'],
+                    ['pit_er', 'ER'],
+                    ['pit_uer', 'UER'],
+                    ['pit_bb', 'BB'],
+                    ['pit_so', 'SO'],
+                    ['pit_hr', 'HR'],
+                    ['pit_hbp', 'HBP'],
+                    ['pit_pitches', 'Pitches'],
+                    ['pit_w', 'W'],
+                    ['pit_l', 'L'],
+                    ['pit_sv', 'SV'],
+                  ].map(([field, label]) => (
+                    <label key={field}>
+                      {label}
+                      <input type="number" min="0" value={playerReport[field]} onChange={e => updatePlayerReport(field, e.target.value)} />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <label>
+              Notes / correction
+              <textarea
+                value={playerReport.notes}
+                onChange={e => updatePlayerReport('notes', e.target.value)}
+                placeholder="Optional: write anything Osmany should review"
+              />
+            </label>
+
+            <button type="submit" disabled={reportSaving}>
+              {reportSaving ? 'Submitting...' : 'Submit Report for Review'}
+            </button>
+          </form>
+        </section>
+      )}
+
+      {isAdmin && activeTab === 'review' && (
+        <section className="live-section">
+          <div className="review-header">
+            <div>
+              <h2>Review Player Reports</h2>
+              <p className="public-note">Approve reports to add them to official season stats.</p>
+            </div>
+
+            <button onClick={loadPendingReports}>Refresh Reports</button>
+          </div>
+
+          {reviewLoading ? (
+            <p>Loading reports...</p>
+          ) : pendingReports.length === 0 ? (
+            <p>No pending reports.</p>
+          ) : (
+            <div className="reports-list">
+              {pendingReports.map(report => (
+                <div className="report-review-card" key={report.id}>
+                  <div className="report-review-top">
+                    <div>
+                      <strong>{report.players?.name || 'Player'}{report.players?.number ? ` #${report.players.number}` : ''}</strong>
+                      <span>{formatDate(report.game_date)} - {report.game_label || 'Game 1'} vs {report.opponent}</span>
+                    </div>
+
+                    <small>{new Date(report.created_at).toLocaleString()}</small>
+                  </div>
+
+                  <div className="review-stats-grid">
+                    <div>
+                      <h4>Batting</h4>
+                      <p>AB {report.bat_ab || 0} | R {report.bat_r || 0} | H {report.bat_h || 0} | 2B {report.bat_doubles || 0} | 3B {report.bat_triples || 0} | HR {report.bat_hr || 0}</p>
+                      <p>RBI {report.bat_rbi || 0} | BB {report.bat_bb || 0} | HBP {report.bat_hbp || 0} | SF {report.bat_sf || 0} | SO {report.bat_so || 0} | SB {report.bat_sb || 0}</p>
+                    </div>
+
+                    <div>
+                      <h4>Pitching</h4>
+                      <p>IP {report.pit_ip || '0.0'} | H {report.pit_h || 0} | ER {report.pit_er || 0} | UER {report.pit_uer || 0}</p>
+                      <p>BB {report.pit_bb || 0} | SO {report.pit_so || 0} | HR {report.pit_hr || 0} | HBP {report.pit_hbp || 0} | Pitches {report.pit_pitches || 0} | W {report.pit_w || 0} | L {report.pit_l || 0} | SV {report.pit_sv || 0}</p>
+                    </div>
+                  </div>
+
+                  {report.notes && (
+                    <p className="report-notes"><strong>Notes:</strong> {report.notes}</p>
+                  )}
+
+                  <div className="live-actions">
+                    <button onClick={() => approveReport(report)}>Approve</button>
+                    <button className="undo-button" onClick={() => rejectReport(report)}>Reject</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </section>
       )}

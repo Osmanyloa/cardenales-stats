@@ -1555,3 +1555,38 @@ th {
     min-width: 0;
   }
 }
+
+
+/* ============================================================
+   REPORT DUPLICATE STATUS + ADMIN REVIEW EDITS
+   ============================================================ */
+
+.warning-note {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 0;
+  font-weight: bold;
+}
+
+.review-game-edit {
+  margin-bottom: 16px;
+}
+
+.review-edit-grid {
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+}
+
+.report-review-card textarea {
+  background: #0f172a;
+  color: white;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 15px;
+  min-height: 74px;
+  resize: vertical;
+  font-family: Arial, Helvetica, sans-serif;
+}

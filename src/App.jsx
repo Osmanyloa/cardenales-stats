@@ -418,6 +418,9 @@ function App() {
   const [reportSaving, setReportSaving] = useState(false)
   const [pendingReports, setPendingReports] = useState([])
   const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewDrafts, setReviewDrafts] = useState({})
+  const [existingPlayerReportLabels, setExistingPlayerReportLabels] = useState([])
+  const [reportStatusLoading, setReportStatusLoading] = useState(false)
 
   const isAdmin = session?.user?.email === ADMIN_EMAIL
 
@@ -441,6 +444,23 @@ function App() {
       setPendingReports([])
     }
   }, [isAdmin])
+
+  useEffect(() => {
+    loadSubmittedGameLabels()
+  }, [playerReport.game_date, playerReport.opponent, playerReport.player_id])
+
+  useEffect(() => {
+    if (!existingPlayerReportLabels.includes(playerReport.game_label)) return
+
+    const nextAvailableGame = ['Game 1', 'Game 2'].find(label => !existingPlayerReportLabels.includes(label))
+
+    if (nextAvailableGame) {
+      setPlayerReport(prev => ({
+        ...prev,
+        game_label: nextAvailableGame,
+      }))
+    }
+  }, [existingPlayerReportLabels, playerReport.game_label])
 
   async function initAuth() {
     const { data, error } = await supabase.auth.getSession()
@@ -1304,6 +1324,132 @@ function App() {
     alert('Substitution saved')
   }
 
+  function buildReviewDraft(report) {
+    return {
+      game_date: report.game_date || '',
+      opponent: report.opponent || '',
+      game_label: report.game_label || 'Game 1',
+      player_id: report.player_id || '',
+      notes: report.notes || '',
+
+      bat_ab: Number(report.bat_ab || 0),
+      bat_r: Number(report.bat_r || 0),
+      bat_h: Number(report.bat_h || 0),
+      bat_doubles: Number(report.bat_doubles || 0),
+      bat_triples: Number(report.bat_triples || 0),
+      bat_hr: Number(report.bat_hr || 0),
+      bat_rbi: Number(report.bat_rbi || 0),
+      bat_bb: Number(report.bat_bb || 0),
+      bat_hbp: Number(report.bat_hbp || 0),
+      bat_sf: Number(report.bat_sf || 0),
+      bat_so: Number(report.bat_so || 0),
+      bat_sb: Number(report.bat_sb || 0),
+
+      pit_ip: report.pit_ip || '',
+      pit_h: Number(report.pit_h || 0),
+      pit_er: Number(report.pit_er || 0),
+      pit_uer: Number(report.pit_uer || 0),
+      pit_bb: Number(report.pit_bb || 0),
+      pit_so: Number(report.pit_so || 0),
+      pit_hr: Number(report.pit_hr || 0),
+      pit_hbp: Number(report.pit_hbp || 0),
+      pit_pitches: Number(report.pit_pitches || 0),
+      pit_w: Number(report.pit_w || 0),
+      pit_l: Number(report.pit_l || 0),
+      pit_sv: Number(report.pit_sv || 0),
+    }
+  }
+
+  function buildReportFromDraft(report) {
+    const draft = reviewDrafts[report.id] || buildReviewDraft(report)
+    const ipOuts = parseIpToOuts(draft.pit_ip)
+
+    return {
+      ...report,
+      ...draft,
+      player_id: Number(draft.player_id || report.player_id),
+      pit_ip_outs: ipOuts === null ? null : Number(ipOuts || 0),
+    }
+  }
+
+  function buildReportUpdatePayload(report) {
+    const finalReport = buildReportFromDraft(report)
+
+    return {
+      game_date: finalReport.game_date,
+      opponent: String(finalReport.opponent || '').trim(),
+      game_label: finalReport.game_label || 'Game 1',
+      player_id: Number(finalReport.player_id),
+      notes: finalReport.notes || null,
+
+      bat_ab: Number(finalReport.bat_ab || 0),
+      bat_r: Number(finalReport.bat_r || 0),
+      bat_h: Number(finalReport.bat_h || 0),
+      bat_doubles: Number(finalReport.bat_doubles || 0),
+      bat_triples: Number(finalReport.bat_triples || 0),
+      bat_hr: Number(finalReport.bat_hr || 0),
+      bat_rbi: Number(finalReport.bat_rbi || 0),
+      bat_bb: Number(finalReport.bat_bb || 0),
+      bat_hbp: Number(finalReport.bat_hbp || 0),
+      bat_sf: Number(finalReport.bat_sf || 0),
+      bat_so: Number(finalReport.bat_so || 0),
+      bat_sb: Number(finalReport.bat_sb || 0),
+
+      pit_ip: finalReport.pit_ip || null,
+      pit_ip_outs: Number(finalReport.pit_ip_outs || 0),
+      pit_h: Number(finalReport.pit_h || 0),
+      pit_er: Number(finalReport.pit_er || 0),
+      pit_uer: Number(finalReport.pit_uer || 0),
+      pit_bb: Number(finalReport.pit_bb || 0),
+      pit_so: Number(finalReport.pit_so || 0),
+      pit_hr: Number(finalReport.pit_hr || 0),
+      pit_hbp: Number(finalReport.pit_hbp || 0),
+      pit_pitches: Number(finalReport.pit_pitches || 0),
+      pit_w: Number(finalReport.pit_w || 0),
+      pit_l: Number(finalReport.pit_l || 0),
+      pit_sv: Number(finalReport.pit_sv || 0),
+    }
+  }
+
+  function updateReviewDraft(reportId, field, value) {
+    setReviewDrafts(prev => ({
+      ...prev,
+      [reportId]: {
+        ...(prev[reportId] || {}),
+        [field]: field === 'game_date' || field === 'opponent' || field === 'game_label' || field === 'player_id' || field === 'pit_ip' || field === 'notes'
+          ? value
+          : Number(value),
+      },
+    }))
+  }
+
+  async function loadSubmittedGameLabels() {
+    if (!playerReport.game_date || !playerReport.opponent.trim() || !playerReport.player_id) {
+      setExistingPlayerReportLabels([])
+      return
+    }
+
+    setReportStatusLoading(true)
+
+    const { data, error } = await supabase
+      .rpc('get_player_report_games', {
+        p_game_date: playerReport.game_date,
+        p_opponent: playerReport.opponent.trim(),
+        p_player_id: Number(playerReport.player_id),
+      })
+
+    if (error) {
+      console.error('Error loading submitted games:', error)
+      setExistingPlayerReportLabels([])
+      setReportStatusLoading(false)
+      return
+    }
+
+    const labels = [...new Set((data || []).map(row => row.game_label).filter(Boolean))]
+    setExistingPlayerReportLabels(labels)
+    setReportStatusLoading(false)
+  }
+
   function updatePlayerReport(field, value) {
     setPlayerReport(prev => ({
       ...prev,
@@ -1335,6 +1481,27 @@ function App() {
 
     if (ipOuts === null) {
       alert('Pitching IP can only end in .0, .1 or .2. Example: 5.2')
+      return
+    }
+
+    const { data: existingSubmittedGames, error: existingError } = await supabase
+      .rpc('get_player_report_games', {
+        p_game_date: playerReport.game_date,
+        p_opponent: playerReport.opponent.trim(),
+        p_player_id: Number(playerReport.player_id),
+      })
+
+    if (existingError) {
+      console.error('Error checking existing reports:', existingError)
+      alert('Error checking existing reports. Try again.')
+      return
+    }
+
+    const alreadySubmitted = (existingSubmittedGames || []).some(row => row.game_label === playerReport.game_label)
+
+    if (alreadySubmitted) {
+      alert(`You already submitted ${playerReport.game_label} for this opponent. Select the other game or contact Osmany for a correction.`)
+      await loadSubmittedGameLabels()
       return
     }
 
@@ -1380,7 +1547,14 @@ function App() {
 
     if (error) {
       console.error('Error submitting report:', error)
-      alert('Error submitting report. Try again.')
+
+      if (error.code === '23505') {
+        alert(`You already submitted ${playerReport.game_label} for this opponent. Contact Osmany if you need to correct it.`)
+      } else {
+        alert('Error submitting report. Try again.')
+      }
+
+      await loadSubmittedGameLabels()
       setReportSaving(false)
       return
     }
@@ -1396,6 +1570,7 @@ function App() {
       ...keepGameInfo,
     })
 
+    await loadSubmittedGameLabels()
     setReportSaving(false)
     alert('Report submitted successfully.')
   }
@@ -1417,7 +1592,15 @@ function App() {
       return
     }
 
-    setPendingReports(data || [])
+    const reports = data || []
+    const drafts = {}
+
+    reports.forEach(report => {
+      drafts[report.id] = buildReviewDraft(report)
+    })
+
+    setPendingReports(reports)
+    setReviewDrafts(drafts)
     setReviewLoading(false)
   }
 
@@ -1462,7 +1645,7 @@ function App() {
       .from('games')
       .select('*')
       .eq('game_date', report.game_date)
-      .eq('opponent', report.opponent)
+      .ilike('opponent', report.opponent)
       .eq('game_label', gameLabel)
       .limit(1)
       .maybeSingle()
@@ -1541,27 +1724,50 @@ function App() {
   async function approveReport(report) {
     if (!requireAdmin()) return
 
-    try {
-      const game = await getOrCreateReportGame(report)
+    const finalReport = buildReportFromDraft(report)
 
-      if (reportHasBatting(report)) {
+    if (!finalReport.game_date || !String(finalReport.opponent || '').trim() || !finalReport.player_id) {
+      alert('Date, opponent and player are required before approving.')
+      return
+    }
+
+    if (finalReport.pit_ip_outs === null) {
+      alert('Pitching IP can only end in .0, .1 or .2. Example: 5.2')
+      return
+    }
+
+    try {
+      const updatePayload = buildReportUpdatePayload(report)
+
+      const { error: preUpdateError } = await supabase
+        .from('player_stat_reports')
+        .update(updatePayload)
+        .eq('id', report.id)
+
+      if (preUpdateError) {
+        throw preUpdateError
+      }
+
+      const game = await getOrCreateReportGame(finalReport)
+
+      if (reportHasBatting(finalReport)) {
         const { error: battingError } = await supabase
           .from('batting_lines')
           .insert({
             game_id: game.id,
-            player_id: Number(report.player_id),
-            ab: Number(report.bat_ab || 0),
-            r: Number(report.bat_r || 0),
-            h: Number(report.bat_h || 0),
-            doubles: Number(report.bat_doubles || 0),
-            triples: Number(report.bat_triples || 0),
-            hr: Number(report.bat_hr || 0),
-            rbi: Number(report.bat_rbi || 0),
-            bb: Number(report.bat_bb || 0),
-            hbp: Number(report.bat_hbp || 0),
-            sf: Number(report.bat_sf || 0),
-            so: Number(report.bat_so || 0),
-            sb: Number(report.bat_sb || 0),
+            player_id: Number(finalReport.player_id),
+            ab: Number(finalReport.bat_ab || 0),
+            r: Number(finalReport.bat_r || 0),
+            h: Number(finalReport.bat_h || 0),
+            doubles: Number(finalReport.bat_doubles || 0),
+            triples: Number(finalReport.bat_triples || 0),
+            hr: Number(finalReport.bat_hr || 0),
+            rbi: Number(finalReport.bat_rbi || 0),
+            bb: Number(finalReport.bat_bb || 0),
+            hbp: Number(finalReport.bat_hbp || 0),
+            sf: Number(finalReport.bat_sf || 0),
+            so: Number(finalReport.bat_so || 0),
+            sb: Number(finalReport.bat_sb || 0),
           })
 
         if (battingError) {
@@ -1569,30 +1775,30 @@ function App() {
         }
       }
 
-      if (reportHasPitching(report)) {
-        const ipOuts = Number(report.pit_ip_outs || 0)
-        const opponentAb = ipOuts + Number(report.pit_h || 0)
+      if (reportHasPitching(finalReport)) {
+        const ipOuts = Number(finalReport.pit_ip_outs || 0)
+        const opponentAb = ipOuts + Number(finalReport.pit_h || 0)
 
         const { error: pitchingError } = await supabase
           .from('pitching_lines')
           .insert({
             game_id: game.id,
-            player_id: Number(report.player_id),
+            player_id: Number(finalReport.player_id),
             ip_outs: ipOuts,
-            h: Number(report.pit_h || 0),
+            h: Number(finalReport.pit_h || 0),
             ab_against: opponentAb,
-            er: Number(report.pit_er || 0),
-            uer: Number(report.pit_uer || 0),
-            bb: Number(report.pit_bb || 0),
-            so: Number(report.pit_so || 0),
-            hr: Number(report.pit_hr || 0),
-            hbp: Number(report.pit_hbp || 0),
-            pitches: Number(report.pit_pitches || 0),
+            er: Number(finalReport.pit_er || 0),
+            uer: Number(finalReport.pit_uer || 0),
+            bb: Number(finalReport.pit_bb || 0),
+            so: Number(finalReport.pit_so || 0),
+            hr: Number(finalReport.pit_hr || 0),
+            hbp: Number(finalReport.pit_hbp || 0),
+            pitches: Number(finalReport.pit_pitches || 0),
             balls: 0,
             strikes: 0,
-            w: Number(report.pit_w || 0),
-            l: Number(report.pit_l || 0),
-            sv: Number(report.pit_sv || 0),
+            w: Number(finalReport.pit_w || 0),
+            l: Number(finalReport.pit_l || 0),
+            sv: Number(finalReport.pit_sv || 0),
           })
 
         if (pitchingError) {
@@ -1622,6 +1828,31 @@ function App() {
       console.error('Error approving report:', error)
       alert('Error approving report. Check console.')
     }
+  }
+
+  async function saveReportDraft(report) {
+    if (!requireAdmin()) return
+
+    const finalReport = buildReportFromDraft(report)
+
+    if (finalReport.pit_ip_outs === null) {
+      alert('Pitching IP can only end in .0, .1 or .2. Example: 5.2')
+      return
+    }
+
+    const { error } = await supabase
+      .from('player_stat_reports')
+      .update(buildReportUpdatePayload(report))
+      .eq('id', report.id)
+
+    if (error) {
+      console.error('Error saving report edits:', error)
+      alert('Error saving report edits')
+      return
+    }
+
+    await loadPendingReports()
+    alert('Report edits saved')
   }
 
   async function rejectReport(report) {
@@ -2021,6 +2252,11 @@ function App() {
     return groups
   }, {})
 
+  const reportGameOptions = ['Game 1', 'Game 2']
+  const availableReportGameOptions = reportGameOptions.filter(label => !existingPlayerReportLabels.includes(label))
+  const reportSelectionReady = Boolean(playerReport.game_date && playerReport.opponent.trim() && playerReport.player_id)
+  const reportSubmitDisabled = reportSaving || (reportSelectionReady && availableReportGameOptions.length === 0)
+
   const currentBatter = getCurrentBatter()
   const livePlayerStats = buildPlayerStats(gameEvents, gameStatsLineup)
   const historyPlayerStats = buildPlayerStats(selectedHistoryEvents, selectedHistoryStatsLineup)
@@ -2418,9 +2654,14 @@ function App() {
 
               <label>
                 Game
-                <select value={playerReport.game_label} onChange={e => updatePlayerReport('game_label', e.target.value)}>
-                  <option value="Game 1">Game 1</option>
-                  <option value="Game 2">Game 2</option>
+                <select
+                  value={playerReport.game_label}
+                  onChange={e => updatePlayerReport('game_label', e.target.value)}
+                  disabled={reportSelectionReady && availableReportGameOptions.length === 0}
+                >
+                  {(reportSelectionReady ? availableReportGameOptions : reportGameOptions).map(label => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
                 </select>
               </label>
 
@@ -2436,6 +2677,22 @@ function App() {
                 </select>
               </label>
             </div>
+
+            {reportStatusLoading && (
+              <p className="public-note">Checking submitted games...</p>
+            )}
+
+            {reportSelectionReady && existingPlayerReportLabels.length > 0 && (
+              <p className="public-note">
+                Already submitted: {existingPlayerReportLabels.join(', ')}.
+              </p>
+            )}
+
+            {reportSelectionReady && availableReportGameOptions.length === 0 && (
+              <p className="warning-note">
+                This player already submitted Game 1 and Game 2 for this opponent.
+              </p>
+            )}
 
             <div className="report-grid">
               <div className="report-card">
@@ -2504,7 +2761,7 @@ function App() {
               />
             </label>
 
-            <button type="submit" disabled={reportSaving}>
+            <button type="submit" disabled={reportSubmitDisabled}>
               {reportSaving ? 'Submitting...' : 'Submit Report for Review'}
             </button>
           </form>
@@ -2528,41 +2785,126 @@ function App() {
             <p>No pending reports.</p>
           ) : (
             <div className="reports-list">
-              {pendingReports.map(report => (
-                <div className="report-review-card" key={report.id}>
-                  <div className="report-review-top">
-                    <div>
-                      <strong>{report.players?.name || 'Player'}{report.players?.number ? ` #${report.players.number}` : ''}</strong>
-                      <span>{formatDate(report.game_date)} - {report.game_label || 'Game 1'} vs {report.opponent}</span>
+              {pendingReports.map(report => {
+                const draft = reviewDrafts[report.id] || buildReviewDraft(report)
+
+                return (
+                  <div className="report-review-card" key={report.id}>
+                    <div className="report-review-top">
+                      <div>
+                        <strong>{report.players?.name || 'Player'}{report.players?.number ? ` #${report.players.number}` : ''}</strong>
+                        <span>{formatDate(draft.game_date)} - {draft.game_label || 'Game 1'} vs {draft.opponent}</span>
+                      </div>
+
+                      <small>{new Date(report.created_at).toLocaleString()}</small>
                     </div>
 
-                    <small>{new Date(report.created_at).toLocaleString()}</small>
-                  </div>
+                    <div className="form-row review-game-edit">
+                      <label>
+                        Date
+                        <input type="date" value={draft.game_date} onChange={e => updateReviewDraft(report.id, 'game_date', e.target.value)} />
+                      </label>
 
-                  <div className="review-stats-grid">
-                    <div>
-                      <h4>Batting</h4>
-                      <p>AB {report.bat_ab || 0} | R {report.bat_r || 0} | H {report.bat_h || 0} | 2B {report.bat_doubles || 0} | 3B {report.bat_triples || 0} | HR {report.bat_hr || 0}</p>
-                      <p>RBI {report.bat_rbi || 0} | BB {report.bat_bb || 0} | HBP {report.bat_hbp || 0} | SF {report.bat_sf || 0} | SO {report.bat_so || 0} | SB {report.bat_sb || 0}</p>
+                      <label>
+                        Opponent
+                        <input type="text" value={draft.opponent} onChange={e => updateReviewDraft(report.id, 'opponent', e.target.value)} />
+                      </label>
+
+                      <label>
+                        Game
+                        <select value={draft.game_label} onChange={e => updateReviewDraft(report.id, 'game_label', e.target.value)}>
+                          <option value="Game 1">Game 1</option>
+                          <option value="Game 2">Game 2</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        Player
+                        <select value={draft.player_id} onChange={e => updateReviewDraft(report.id, 'player_id', e.target.value)}>
+                          {playersList.map(player => (
+                            <option key={player.id} value={player.id}>
+                              {player.name}{player.number ? ` #${player.number}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                     </div>
 
-                    <div>
-                      <h4>Pitching</h4>
-                      <p>IP {report.pit_ip || '0.0'} | H {report.pit_h || 0} | ER {report.pit_er || 0} | UER {report.pit_uer || 0}</p>
-                      <p>BB {report.pit_bb || 0} | SO {report.pit_so || 0} | HR {report.pit_hr || 0} | HBP {report.pit_hbp || 0} | Pitches {report.pit_pitches || 0} | W {report.pit_w || 0} | L {report.pit_l || 0} | SV {report.pit_sv || 0}</p>
+                    <div className="review-stats-grid">
+                      <div>
+                        <h4>Batting</h4>
+
+                        <div className="stats-grid review-edit-grid">
+                          {[
+                            ['bat_ab', 'AB'],
+                            ['bat_r', 'R'],
+                            ['bat_h', 'H'],
+                            ['bat_doubles', '2B'],
+                            ['bat_triples', '3B'],
+                            ['bat_hr', 'HR'],
+                            ['bat_rbi', 'RBI'],
+                            ['bat_bb', 'BB'],
+                            ['bat_hbp', 'HBP'],
+                            ['bat_sf', 'SF'],
+                            ['bat_so', 'SO'],
+                            ['bat_sb', 'SB'],
+                          ].map(([field, label]) => (
+                            <label key={field}>
+                              {label}
+                              <input type="number" min="0" value={draft[field]} onChange={e => updateReviewDraft(report.id, field, e.target.value)} />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4>Pitching</h4>
+
+                        <div className="stats-grid review-edit-grid">
+                          <label>
+                            IP
+                            <input type="text" value={draft.pit_ip} onChange={e => updateReviewDraft(report.id, 'pit_ip', e.target.value)} />
+                          </label>
+
+                          {[
+                            ['pit_h', 'H'],
+                            ['pit_er', 'ER'],
+                            ['pit_uer', 'UER'],
+                            ['pit_bb', 'BB'],
+                            ['pit_so', 'SO'],
+                            ['pit_hr', 'HR'],
+                            ['pit_hbp', 'HBP'],
+                            ['pit_pitches', 'Pitches'],
+                            ['pit_w', 'W'],
+                            ['pit_l', 'L'],
+                            ['pit_sv', 'SV'],
+                          ].map(([field, label]) => (
+                            <label key={field}>
+                              {label}
+                              <input type="number" min="0" value={draft[field]} onChange={e => updateReviewDraft(report.id, field, e.target.value)} />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <label>
+                      Notes / correction
+                      <textarea
+                        value={draft.notes}
+                        onChange={e => updateReviewDraft(report.id, 'notes', e.target.value)}
+                        placeholder="Optional: notes or correction"
+                      />
+                    </label>
+
+                    <div className="live-actions">
+                      <button onClick={() => saveReportDraft(report)}>Save Edits</button>
+                      <button onClick={() => approveReport(report)}>Approve</button>
+                      <button className="undo-button" onClick={() => rejectReport(report)}>Reject</button>
                     </div>
                   </div>
-
-                  {report.notes && (
-                    <p className="report-notes"><strong>Notes:</strong> {report.notes}</p>
-                  )}
-
-                  <div className="live-actions">
-                    <button onClick={() => approveReport(report)}>Approve</button>
-                    <button className="undo-button" onClick={() => rejectReport(report)}>Reject</button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </section>

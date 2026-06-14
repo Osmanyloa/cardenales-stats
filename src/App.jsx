@@ -798,6 +798,159 @@ function App() {
     alert('Final score saved')
   }
 
+  function updateHistoryBattingLine(lineId, field, value) {
+    setSelectedHistoryBattingLines(prev =>
+      prev.map(row =>
+        Number(row.id) === Number(lineId)
+          ? { ...row, [field]: parseNumberInput(value) }
+          : row
+      )
+    )
+  }
+
+  async function saveHistoryBattingLine(row) {
+    if (!requireAdmin()) return
+
+    const { error } = await supabase
+      .from('batting_lines')
+      .update({
+        ab: Number(row.ab || 0),
+        r: Number(row.r || 0),
+        h: Number(row.h || 0),
+        doubles: Number(row.doubles || 0),
+        triples: Number(row.triples || 0),
+        hr: Number(row.hr || 0),
+        rbi: Number(row.rbi || 0),
+        bb: Number(row.bb || 0),
+        hbp: Number(row.hbp || 0),
+        sf: Number(row.sf || 0),
+        so: Number(row.so || 0),
+        sb: Number(row.sb || 0),
+      })
+      .eq('id', row.id)
+
+    if (error) {
+      console.error('Error saving batting line:', error)
+      alert('Error saving batting line')
+      return
+    }
+
+    if (selectedHistoryGame) {
+      await loadHistoryOfficialLines(selectedHistoryGame.id)
+    }
+
+    await loadStats()
+    alert('Batting line saved')
+  }
+
+  async function deleteHistoryBattingLine(row) {
+    if (!requireAdmin()) return
+
+    const confirmed = window.confirm(`Delete batting line for ${row.players?.name || 'this player'}?`)
+    if (!confirmed) return
+
+    const { error } = await supabase
+      .from('batting_lines')
+      .delete()
+      .eq('id', row.id)
+
+    if (error) {
+      console.error('Error deleting batting line:', error)
+      alert('Error deleting batting line')
+      return
+    }
+
+    if (selectedHistoryGame) {
+      await loadHistoryOfficialLines(selectedHistoryGame.id)
+    }
+
+    await loadStats()
+    alert('Batting line deleted')
+  }
+
+  function updateHistoryPitchingLine(lineId, field, value) {
+    setSelectedHistoryPitchingLines(prev =>
+      prev.map(row =>
+        Number(row.id) === Number(lineId)
+          ? {
+              ...row,
+              [field]: field === 'ip' ? value : parseNumberInput(value),
+            }
+          : row
+      )
+    )
+  }
+
+  async function saveHistoryPitchingLine(row) {
+    if (!requireAdmin()) return
+
+    const ipOuts = parseIpToOuts(row.ip !== undefined ? row.ip : formatIpFromOuts(row.ip_outs))
+
+    if (ipOuts === null) {
+      alert('IP can only end in .0, .1 or .2. Example: 5.2')
+      return
+    }
+
+    const opponentAb = ipOuts + Number(row.h || 0)
+
+    const { error } = await supabase
+      .from('pitching_lines')
+      .update({
+        ip_outs: Number(ipOuts || 0),
+        h: Number(row.h || 0),
+        ab_against: opponentAb,
+        er: Number(row.er || 0),
+        uer: Number(row.uer || 0),
+        bb: Number(row.bb || 0),
+        so: Number(row.so || 0),
+        hr: Number(row.hr || 0),
+        hbp: Number(row.hbp || 0),
+        pitches: Number(row.pitches || 0),
+        w: Number(row.w || 0),
+        l: Number(row.l || 0),
+        sv: Number(row.sv || 0),
+      })
+      .eq('id', row.id)
+
+    if (error) {
+      console.error('Error saving pitching line:', error)
+      alert('Error saving pitching line')
+      return
+    }
+
+    if (selectedHistoryGame) {
+      await loadHistoryOfficialLines(selectedHistoryGame.id)
+    }
+
+    await loadStats()
+    alert('Pitching line saved')
+  }
+
+  async function deleteHistoryPitchingLine(row) {
+    if (!requireAdmin()) return
+
+    const confirmed = window.confirm(`Delete pitching line for ${row.players?.name || 'this player'}?`)
+    if (!confirmed) return
+
+    const { error } = await supabase
+      .from('pitching_lines')
+      .delete()
+      .eq('id', row.id)
+
+    if (error) {
+      console.error('Error deleting pitching line:', error)
+      alert('Error deleting pitching line')
+      return
+    }
+
+    if (selectedHistoryGame) {
+      await loadHistoryOfficialLines(selectedHistoryGame.id)
+    }
+
+    await loadStats()
+    alert('Pitching line deleted')
+  }
+
   function getCurrentBatter() {
     if (!gameLineup.length) return null
     return gameLineup[currentBatterIndex] || gameLineup[0]
@@ -3029,6 +3182,7 @@ function App() {
                                   <th>SO</th>
                                   <th>SB</th>
                                   <th>AVG</th>
+                                  {isAdmin && <th>ACTIONS</th>}
                                 </tr>
                               </thead>
 
@@ -3040,19 +3194,58 @@ function App() {
                                     <tr key={`bat-${row.id}`}>
                                       <td className="player-name">{row.players?.name || '-'}</td>
                                       <td>{row.players?.number || ''}</td>
-                                      <td>{row.ab || 0}</td>
-                                      <td>{row.r || 0}</td>
-                                      <td>{row.h || 0}</td>
-                                      <td>{row.doubles || 0}</td>
-                                      <td>{row.triples || 0}</td>
-                                      <td>{row.hr || 0}</td>
-                                      <td>{row.rbi || 0}</td>
-                                      <td>{row.bb || 0}</td>
-                                      <td>{row.hbp || 0}</td>
-                                      <td>{row.sf || 0}</td>
-                                      <td>{row.so || 0}</td>
-                                      <td>{row.sb || 0}</td>
+                                      {isAdmin ? (
+                                        <>
+                                          {[
+                                            ['ab', 'AB'],
+                                            ['r', 'R'],
+                                            ['h', 'H'],
+                                            ['doubles', '2B'],
+                                            ['triples', '3B'],
+                                            ['hr', 'HR'],
+                                            ['rbi', 'RBI'],
+                                            ['bb', 'BB'],
+                                            ['hbp', 'HBP'],
+                                            ['sf', 'SF'],
+                                            ['so', 'SO'],
+                                            ['sb', 'SB'],
+                                          ].map(([field]) => (
+                                            <td key={field}>
+                                              <input
+                                                className="table-number-input"
+                                                type="number"
+                                                min="0"
+                                                value={row[field] ?? 0}
+                                                onChange={e => updateHistoryBattingLine(row.id, field, e.target.value)}
+                                              />
+                                            </td>
+                                          ))}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <td>{row.ab || 0}</td>
+                                          <td>{row.r || 0}</td>
+                                          <td>{row.h || 0}</td>
+                                          <td>{row.doubles || 0}</td>
+                                          <td>{row.triples || 0}</td>
+                                          <td>{row.hr || 0}</td>
+                                          <td>{row.rbi || 0}</td>
+                                          <td>{row.bb || 0}</td>
+                                          <td>{row.hbp || 0}</td>
+                                          <td>{row.sf || 0}</td>
+                                          <td>{row.so || 0}</td>
+                                          <td>{row.sb || 0}</td>
+                                        </>
+                                      )}
                                       <td>{formatStat(avg)}</td>
+                                      {isAdmin && (
+                                        <td>
+                                          <div className="table-actions">
+                                            <button type="button" onClick={() => saveHistoryBattingLine(row)}>Save</button>
+                                            <button type="button" className="undo-button" onClick={() => deleteHistoryBattingLine(row)}>Delete</button>
+                                          </div>
+                                        </td>
+                                      )}
                                     </tr>
                                   )
                                 })}
@@ -3084,6 +3277,7 @@ function App() {
                                   <th>W</th>
                                   <th>L</th>
                                   <th>SV</th>
+                                  {isAdmin && <th>ACTIONS</th>}
                                 </tr>
                               </thead>
 
@@ -3092,18 +3286,65 @@ function App() {
                                   <tr key={`pit-${row.id}`}>
                                     <td className="player-name">{row.players?.name || '-'}</td>
                                     <td>{row.players?.number || ''}</td>
-                                    <td>{formatIpFromOuts(row.ip_outs)}</td>
-                                    <td>{row.h || 0}</td>
-                                    <td>{row.er || 0}</td>
-                                    <td>{row.uer || 0}</td>
-                                    <td>{row.bb || 0}</td>
-                                    <td>{row.so || 0}</td>
-                                    <td>{row.hr || 0}</td>
-                                    <td>{row.hbp || 0}</td>
-                                    <td>{row.pitches || 0}</td>
-                                    <td>{row.w || 0}</td>
-                                    <td>{row.l || 0}</td>
-                                    <td>{row.sv || 0}</td>
+                                    {isAdmin ? (
+                                      <>
+                                        <td>
+                                          <input
+                                            className="table-number-input"
+                                            type="text"
+                                            value={row.ip !== undefined ? row.ip : formatIpFromOuts(row.ip_outs)}
+                                            onChange={e => updateHistoryPitchingLine(row.id, 'ip', e.target.value)}
+                                          />
+                                        </td>
+
+                                        {[
+                                          ['h', 'H'],
+                                          ['er', 'ER'],
+                                          ['uer', 'UER'],
+                                          ['bb', 'BB'],
+                                          ['so', 'SO'],
+                                          ['hr', 'HR'],
+                                          ['hbp', 'HBP'],
+                                          ['pitches', 'Pitches'],
+                                          ['w', 'W'],
+                                          ['l', 'L'],
+                                          ['sv', 'SV'],
+                                        ].map(([field]) => (
+                                          <td key={field}>
+                                            <input
+                                              className="table-number-input"
+                                              type="number"
+                                              min="0"
+                                              value={row[field] ?? 0}
+                                              onChange={e => updateHistoryPitchingLine(row.id, field, e.target.value)}
+                                            />
+                                          </td>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <td>{formatIpFromOuts(row.ip_outs)}</td>
+                                        <td>{row.h || 0}</td>
+                                        <td>{row.er || 0}</td>
+                                        <td>{row.uer || 0}</td>
+                                        <td>{row.bb || 0}</td>
+                                        <td>{row.so || 0}</td>
+                                        <td>{row.hr || 0}</td>
+                                        <td>{row.hbp || 0}</td>
+                                        <td>{row.pitches || 0}</td>
+                                        <td>{row.w || 0}</td>
+                                        <td>{row.l || 0}</td>
+                                        <td>{row.sv || 0}</td>
+                                      </>
+                                    )}
+                                    {isAdmin && (
+                                      <td>
+                                        <div className="table-actions">
+                                          <button type="button" onClick={() => saveHistoryPitchingLine(row)}>Save</button>
+                                          <button type="button" className="undo-button" onClick={() => deleteHistoryPitchingLine(row)}>Delete</button>
+                                        </div>
+                                      </td>
+                                    )}
                                   </tr>
                                 ))}
                               </tbody>

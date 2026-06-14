@@ -378,6 +378,9 @@ function App() {
   const [selectedHistoryEvents, setSelectedHistoryEvents] = useState([])
   const [selectedHistoryBattingLines, setSelectedHistoryBattingLines] = useState([])
   const [selectedHistoryPitchingLines, setSelectedHistoryPitchingLines] = useState([])
+  const [historyScoreCardenales, setHistoryScoreCardenales] = useState(0)
+  const [historyScoreOpponent, setHistoryScoreOpponent] = useState(0)
+  const [historyScoreSaving, setHistoryScoreSaving] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -556,7 +559,7 @@ function App() {
   async function loadPlayers() {
     const { data, error } = await supabase
       .from('players')
-      .select('id, name')
+      .select('id, name, number')
       .eq('active', true)
       .order('id', { ascending: true })
 
@@ -721,10 +724,43 @@ function App() {
 
   async function openHistoryGame(game) {
     setSelectedHistoryGame(game)
+    setHistoryScoreCardenales(Number(game.cardenales_runs || 0))
+    setHistoryScoreOpponent(Number(game.opponent_runs || 0))
     await loadGameLineup(game.id, setSelectedHistoryLineup, true, playersList)
     await loadGameLineup(game.id, setSelectedHistoryStatsLineup, false, playersList)
     await loadGameEvents(game.id, setSelectedHistoryEvents)
     await loadHistoryOfficialLines(game.id)
+  }
+
+  async function saveHistoryFinalScore(event) {
+    event.preventDefault()
+
+    if (!requireAdmin()) return
+    if (!selectedHistoryGame) return
+
+    setHistoryScoreSaving(true)
+
+    const { data, error } = await supabase
+      .from('games')
+      .update({
+        cardenales_runs: Number(historyScoreCardenales || 0),
+        opponent_runs: Number(historyScoreOpponent || 0),
+      })
+      .eq('id', selectedHistoryGame.id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error saving final score:', error)
+      alert('Error saving final score')
+      setHistoryScoreSaving(false)
+      return
+    }
+
+    setSelectedHistoryGame(data)
+    setGameHistory(prev => prev.map(game => Number(game.id) === Number(data.id) ? data : game))
+    setHistoryScoreSaving(false)
+    alert('Final score saved')
   }
 
   function getCurrentBatter() {
@@ -1968,6 +2004,23 @@ function App() {
     )
   }
 
+  function getOpponentName(game) {
+    if (!game) return ''
+    return game.away_team === 'Cardenales' ? game.home_team : game.away_team
+  }
+
+  const historyGroups = gameHistory.reduce((groups, game) => {
+    const opponentName = getOpponentName(game) || game.opponent || 'Opponent'
+    const groupKey = `${formatDate(game.game_date)} vs ${opponentName}`
+
+    if (!groups[groupKey]) {
+      groups[groupKey] = []
+    }
+
+    groups[groupKey].push(game)
+    return groups
+  }, {})
+
   const currentBatter = getCurrentBatter()
   const livePlayerStats = buildPlayerStats(gameEvents, gameStatsLineup)
   const historyPlayerStats = buildPlayerStats(selectedHistoryEvents, selectedHistoryStatsLineup)
@@ -2518,39 +2571,87 @@ function App() {
       {activeTab === 'history' && (
         <section className="live-section">
           <h2>Game History</h2>
+          <p className="public-note">
+            Historical player performance by opponent and game. Only the final runs are tracked here.
+          </p>
 
           <div className="history-grid">
-            <div className="history-list">
-              {gameHistory.map(game => (
-                <button
-                  key={game.id}
-                  className="history-item"
-                  onClick={() => openHistoryGame(game)}
-                >
-                  <strong>{formatDate(game.game_date)} {formatTime(game.game_time)}</strong>
-                  <span>vs {game.away_team === 'Cardenales' ? game.home_team : game.away_team}</span>
-                  <small>{game.game_label || 'Game'} - Cardenales {game.cardenales_runs || 0} - {game.opponent_runs || 0}</small>
-                </button>
-              ))}
+            <div className="history-list grouped-history-list">
+              {gameHistory.length === 0 ? (
+                <p>No completed games yet.</p>
+              ) : (
+                Object.entries(historyGroups).map(([groupName, games]) => (
+                  <div className="history-group" key={groupName}>
+                    <h3>{groupName}</h3>
+
+                    {games.map(game => (
+                      <button
+                        key={game.id}
+                        className="history-item"
+                        onClick={() => openHistoryGame(game)}
+                      >
+                        <strong>{game.game_label || 'Game'}</strong>
+                        <span>Cardenales vs {getOpponentName(game) || game.opponent || 'Opponent'}</span>
+                        <small>Final: Cardenales {game.cardenales_runs || 0} - {game.opponent_runs || 0}</small>
+                      </button>
+                    ))}
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="history-detail">
               {!selectedHistoryGame ? (
-                <p>Select a game to view details.</p>
+                <p>Select a game to view player stats.</p>
               ) : (
                 <>
-                  <h3>
-                    {formatDate(selectedHistoryGame.game_date)} {formatTime(selectedHistoryGame.game_time)} - {selectedHistoryGame.game_label || 'Game'} - {selectedHistoryGame.away_team} at {selectedHistoryGame.home_team}
-                  </h3>
-                  {renderScoreboard(selectedHistoryGame)}
+                  <div className="simple-score-card">
+                    <div>
+                      <p className="eyebrow">{formatDate(selectedHistoryGame.game_date)} - {selectedHistoryGame.game_label || 'Game'}</p>
+                      <h3>Cardenales vs {getOpponentName(selectedHistoryGame) || selectedHistoryGame.opponent || 'Opponent'}</h3>
+                    </div>
 
-                  {selectedHistoryLineup.length > 0 && renderField(selectedHistoryLineup)}
+                    <div className="final-score-display">
+                      <span>Cardenales</span>
+                      <strong>{selectedHistoryGame.cardenales_runs || 0}</strong>
+                      <span>{getOpponentName(selectedHistoryGame) || selectedHistoryGame.opponent || 'Opponent'}</span>
+                      <strong>{selectedHistoryGame.opponent_runs || 0}</strong>
+                    </div>
+                  </div>
+
+                  {isAdmin && (
+                    <form className="score-edit-form" onSubmit={saveHistoryFinalScore}>
+                      <label>
+                        Cardenales Runs
+                        <input
+                          type="number"
+                          min="0"
+                          value={historyScoreCardenales}
+                          onChange={e => setHistoryScoreCardenales(Number(e.target.value))}
+                        />
+                      </label>
+
+                      <label>
+                        Opponent Runs
+                        <input
+                          type="number"
+                          min="0"
+                          value={historyScoreOpponent}
+                          onChange={e => setHistoryScoreOpponent(Number(e.target.value))}
+                        />
+                      </label>
+
+                      <button type="submit" disabled={historyScoreSaving}>
+                        {historyScoreSaving ? 'Saving...' : 'Save Final Score'}
+                      </button>
+                    </form>
+                  )}
 
                   {(selectedHistoryBattingLines.length > 0 || selectedHistoryPitchingLines.length > 0) ? (
                     <>
                       {selectedHistoryBattingLines.length > 0 && (
                         <>
-                          <h3>Official Batting Lines</h3>
+                          <h3>Batting Lines</h3>
 
                           <div className="table-wrap">
                             <table>
@@ -2606,7 +2707,7 @@ function App() {
 
                       {selectedHistoryPitchingLines.length > 0 && (
                         <>
-                          <h3>Official Pitching Lines</h3>
+                          <h3>Pitching Lines</h3>
 
                           <div className="table-wrap">
                             <table>

@@ -1469,3 +1469,89 @@ th {
     flex-direction: column;
   }
 }
+
+/* ============================================================
+   OPPONENT HISTORY + FINAL SCORE ONLY
+   ============================================================ */
+
+.grouped-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-group {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.history-group h3 {
+  color: #facc15;
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.simple-score-card {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.simple-score-card h3 {
+  margin: 0;
+  color: #f8fafc;
+}
+
+.final-score-display {
+  display: grid;
+  grid-template-columns: max-content 54px;
+  gap: 8px 12px;
+  align-items: center;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 12px;
+  min-width: 230px;
+}
+
+.final-score-display span {
+  color: #cbd5e1;
+  font-weight: bold;
+}
+
+.final-score-display strong {
+  color: #facc15;
+  font-size: 28px;
+  text-align: center;
+}
+
+.score-edit-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 800px) {
+  .simple-score-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .final-score-display {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -1986,8 +1986,15 @@ function App() {
 
       <nav className="tabs">
         <button className={activeTab === 'live' ? 'tab active-tab' : 'tab'} onClick={() => setActiveTab('live')}>Live Game</button>
+        <button className={activeTab === 'report' ? 'tab active-tab' : 'tab'} onClick={() => setActiveTab('report')}>Player Report</button>
         <button className={activeTab === 'history' ? 'tab active-tab' : 'tab'} onClick={() => setActiveTab('history')}>Game History</button>
         <button className={activeTab === 'season' ? 'tab active-tab' : 'tab'} onClick={() => setActiveTab('season')}>Season Stats</button>
+        {isAdmin && (
+          <button className={activeTab === 'review' ? 'tab active-tab' : 'tab'} onClick={() => setActiveTab('review')}>
+            Review Reports
+            {pendingReports.length > 0 ? ` (${pendingReports.length})` : ''}
+          </button>
+        )}
       </nav>
 
       {activeTab === 'live' && (
